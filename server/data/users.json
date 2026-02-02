@@ -1,0 +1,30 @@
+[
+  {
+    "_id": "1769535329071",
+    "name": "naivedh jariwala",
+    "email": "naivedh612@gmail.com",
+    "password": "$2b$10$MEL0cQK4XZ/nWWQdmg4MBuyR.Wc34FxtRYUZtvFAQX0k.vqEEif4y",
+    "role": "admin",
+    "organizationName": "",
+    "resetPasswordToken": "969564",
+    "resetPasswordExpire": 1769536123365,
+    "createdAt": "2026-01-27T17:35:29.071Z"
+  },
+  {
+    "_id": "admin-1769542139658",
+    "name": "Super Admin",
+    "email": "admin@gmail.com",
+    "password": "$2b$10$7uZBtOvzCQfKXPR/mxL79uhcR/Q0vvxeMkdX4zmhgWdXv9kV3J0eW",
+    "role": "admin",
+    "createdAt": "2026-01-27T19:28:59.658Z"
+  },
+  {
+    "_id": "1769542531748",
+    "name": "Naivedh Jariwala",
+    "email": "naivedh@gmail.com",
+    "password": "$2b$10$VeYudUwuHBZ.1273cTVmlus2ngQ7jeWiy/8SAO4JmsqAnhMv4tEsu",
+    "role": "user",
+    "organizationName": "",
+    "createdAt": "2026-01-27T19:35:31.748Z"
+  }
+]

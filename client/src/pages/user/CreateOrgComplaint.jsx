@@ -1,0 +1,182 @@
+import React, { useState, useContext } from "react";
+import { AuthContext } from "../../context/AuthContext";
+import DashboardLayout from "../../components/layout/DashboardLayout";
+import Input from "../../components/common/Input";
+import Button from "../../components/common/Button";
+import { FileText, Send, AlertCircle, Building2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+
+const CreateOrgComplaint = () => {
+  const { user, createComplaint } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("Internal");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState("Low");
+  const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Redirect if no organization (though route guard should handle this)
+  if (!user?.organizationName && user?.role !== 'admin') {
+     return (
+        <DashboardLayout role="user">
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
+            <div className="bg-red-50 p-6 rounded-2xl border border-red-100 max-w-lg">
+              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+              <h1 className="text-2xl font-bold mb-2 text-slate-900">Access Restricted</h1>
+              <p className="text-slate-600">
+                You are not currently associated with an active organization.
+              </p>
+            </div>
+          </div>
+        </DashboardLayout>
+      );
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setMessage("");
+
+    if (description.length < 10) {
+      setMessage("Description must be at least 10 characters");
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Create complaint via Context - flagging as Organization complaint
+    const newComplaint = {
+      title,
+      category,
+      description,
+      priority,
+      user: user.name,
+      userId: user._id || user.id,
+      organization: user.organizationName,
+      organizationId: user.organizationId,
+      type: "organization" // Distinguish from platform complaints if needed
+    };
+
+    try {
+      await createComplaint(newComplaint);
+      setMessage("Organization complaint submitted successfully!");
+      // Reset form
+      setTitle("");
+      setCategory("Internal");
+      setDescription("");
+      setPriority("Low");
+      
+      // Optional: Redirect back to list after short delay
+      setTimeout(() => {
+          navigate('/user/org-complaints');
+      }, 1500);
+
+    } catch (err) {
+      console.error(err);
+      setMessage("Failed to submit complaint. Try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <DashboardLayout role="user">
+      <div className="relative min-h-[calc(100vh-100px)]">
+        {/* Background FX */}
+        <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+          <div className="absolute top-[10%] left-[20%] w-72 h-72 bg-purple-400/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-[10%] right-[10%] w-72 h-72 bg-indigo-400/5 rounded-full blur-3xl" />
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-3xl mx-auto"
+        >
+          <div className="mb-8">
+            <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400">
+                <Building2 size={32} />
+              </div>
+              Submit Organization Complaint
+            </h1>
+            <p className="text-slate-500 dark:text-slate-400 mt-2 ml-1">
+              File a complaint specifically for <strong>{user.organizationName || "your organization"}</strong>.
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-8">
+            {message && (
+              <div className={`mb-6 p-4 rounded-xl flex items-center gap-2 ${message.includes("success") ? "bg-green-50 text-green-700 border border-green-100" : "bg-red-50 text-red-700 border border-red-100"}`}>
+                {message.includes("success") ? <Send size={18} /> : <AlertCircle size={18} />}
+                {message}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <Input
+                label="Issue Title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Brief summary of the issue"
+                className="bg-slate-50 dark:bg-slate-700/50"
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block mb-2 font-semibold text-slate-700 dark:text-slate-200">Category</label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                  >
+                    <option>Internal</option>
+                    <option>HR</option>
+                    <option>Facility</option>
+                    <option>IT Support</option>
+                    <option>Management</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block mb-2 font-semibold text-slate-700 dark:text-slate-200">Priority</label>
+                  <select
+                    value={priority}
+                    onChange={(e) => setPriority(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                  >
+                    <option>Low</option>
+                    <option>Medium</option>
+                    <option>High</option>
+                    <option>Critical</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block mb-2 font-semibold text-slate-700 dark:text-slate-200">Detailed Description</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all min-h-[150px]"
+                  placeholder="Provide all relevant details regarding this organization issue..."
+                />
+                <p className="text-right text-xs text-slate-400 mt-1">{description.length} chars (min 10)</p>
+              </div>
+
+              <div className="pt-4">
+                <Button type="submit" className="w-full py-4 text-base font-bold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-500/30">
+                  {isSubmitting ? "Submitting..." : "Submit Organization Complaint"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </motion.div>
+      </div>
+    </DashboardLayout>
+  );
+};
+
+export default CreateOrgComplaint;
