@@ -1,7 +1,7 @@
 import React, { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Building2, Eye, EyeOff, ArrowLeft, Mail, Lock, Loader2, Briefcase } from "lucide-react";
+import { User, Building2, Eye, EyeOff, ArrowLeft, Mail, Lock, Loader2, Briefcase, Home } from "lucide-react";
 import { AuthContext } from "../../context/AuthContext";
 
 const FloatingLabelInput = ({ id, type, label, value, onChange, icon: Icon, rightElement, required = false }) => {
@@ -128,6 +128,7 @@ const Register = () => {
                   <span className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 mr-2 transition-colors">
                     <ArrowLeft size={16} />
                   </span>
+                  <Home size={16} className="mr-2" />
                   Back home
                 </Link>
               </div>
