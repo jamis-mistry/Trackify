@@ -1,7 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, Outlet } from "react-router-dom";
-import { Zap } from "lucide-react"; // Importing an icon for the logo
+import Loader from "../common/Loader";
 
 const PageTransition = () => {
     const location = useLocation();
@@ -14,33 +14,28 @@ const PageTransition = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.1 }} // Fast fade code content content itself, optional
+                transition={{ duration: 0.1 }}
             >
                 {/* The Slide/Splash Overlay */}
                 <motion.div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-indigo-600"
-                    initial={{ scaleY: 1 }} // Start covering the screen (from previous exit or initial load)
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-indigo-950"
+                    initial={{ scaleY: 1, opacity: 1 }}
                     animate={{
                         scaleY: 0,
-                        transition: { duration: 0.5, ease: "circOut", delay: 0.4 },
-                    }} // Reveal the content
+                        opacity: 0,
+                        transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 1.5 },
+                    }}
                     exit={{
                         scaleY: 1,
-                        transition: { duration: 0.4, ease: "circIn" },
-                    }} // Cover the screen
-                    style={{ originY: 1 }} // Animate from bottom
+                        opacity: 1,
+                        transition: { duration: 0.1, ease: [0.22, 1, 0.36, 1] },
+                    }}
+                    style={{ originY: 1 }}
                 >
-                    {/* Logo/Spinner in the Splash Screen */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.5 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.5 }}
-                        transition={{ duration: 0.3 }}
-                        className="flex flex-col items-center gap-2 text-white"
-                    >
-                        <Zap size={64} fill="currentColor" />
-                        <h1 className="text-3xl font-bold tracking-wider">TRACKIFY</h1>
-                    </motion.div>
+                    <div className="flex flex-col items-center gap-10 text-white">
+                        <Loader />
+                        <h1 className="text-xl font-bold tracking-[0.2em] text-indigo-400/80 animate-pulse">TRACKIFY</h1>
+                    </div>
                 </motion.div>
 
                 {/* Content */}
