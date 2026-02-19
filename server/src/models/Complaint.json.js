@@ -22,6 +22,7 @@ class Complaint {
         this.user = data.user; // User Object or ID
         this.userId = data.userId;
         this.userName = data.userName;
+        this.attachments = data.attachments || [];
         this.createdAt = data.createdAt ? new Date(data.createdAt) : new Date();
     }
 

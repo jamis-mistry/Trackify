@@ -12,8 +12,18 @@ const CreateComplaint = () => {
   const [category, setCategory] = useState("Technical");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("Low");
+  const [attachments, setAttachments] = useState([]);
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setAttachments(prev => [...prev, ...files]);
+  };
+
+  const removeFile = (index) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
 
   if (!user?.organizationName && user?.role !== 'admin') { // Relaxed check for testing if orgId missing in mock
     return (
@@ -44,7 +54,7 @@ const CreateComplaint = () => {
     }
 
     // Create complaint via Context
-    const newComplaint = {
+    const complaintData = {
       title,
       category,
       description,
@@ -56,13 +66,14 @@ const CreateComplaint = () => {
     };
 
     try {
-      await createComplaint(newComplaint);
-      setMessage("Complaint submitted successfully!");
+      await createComplaint(complaintData, attachments);
+      setMessage("Complaint submitted successfully with attachments!");
       // Reset form
       setTitle("");
       setCategory("Technical");
       setDescription("");
       setPriority("Low");
+      setAttachments([]);
     } catch (err) {
       setMessage("Failed to submit complaint. Try again.");
     } finally {
@@ -152,6 +163,35 @@ const CreateComplaint = () => {
                   placeholder="Please provide specific details including timestamps, error messages, and steps to reproduce..."
                 />
                 <p className="text-right text-xs text-slate-400 mt-1">{description.length} chars (min 10)</p>
+              </div>
+
+              {/* Attachments Section */}
+              <div className="space-y-4">
+                <label className="block text-slate-700 dark:text-slate-200 font-semibold">Attachments (Photos/Videos)</label>
+                <div className="flex flex-wrap gap-4">
+                  {attachments.map((file, idx) => (
+                    <div key={idx} className="relative group w-24 h-24 bg-slate-100 dark:bg-slate-700 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-600">
+                      {file.type.startsWith('image/') ? (
+                        <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" alt="" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-slate-800 text-white text-[10px] font-bold">VIDEO</div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeFile(idx)}
+                        className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <AlertCircle size={14} className="rotate-45" />
+                      </button>
+                    </div>
+                  ))}
+                  <label className="w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl cursor-pointer hover:border-purple-500 dark:hover:border-purple-400 transition-colors">
+                    <Send size={20} className="text-slate-400 rotate-[-45deg]" />
+                    <span className="text-[10px] text-slate-500 font-bold mt-2">UPLOAD</span>
+                    <input type="file" multiple onChange={handleFileChange} className="hidden" accept="image/*,video/*" />
+                  </label>
+                </div>
+                <p className="text-xs text-slate-400 italic">Supported formats: JPG, PNG, MP4, MOV. Max size 50MB.</p>
               </div>
 
               <div className="pt-4">

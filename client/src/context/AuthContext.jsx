@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createContext } from "react";
+import complaintService from "../services/complaintService";
 
 export const AuthContext = createContext(null);
 
@@ -241,22 +242,41 @@ const AuthProvider = ({ children }) => {
   };
 
   const getMockComplaints = async (userId = null) => {
-    const all = getStoredComplaints();
-    if (userId) return all.filter(c => c.userId === userId);
-    return all;
+    try {
+      const realComplaints = await complaintService.getAllComplaints();
+      if (userId) return realComplaints.filter(c => c.userId === userId);
+      return realComplaints;
+    } catch (e) {
+      const all = getStoredComplaints();
+      if (userId) return all.filter(c => c.userId === userId);
+      return all;
+    }
   };
 
-  const createComplaint = async (complaintData) => {
-    const all = getStoredComplaints();
-    const newComplaint = {
-      id: "CMP-" + Math.floor(1000 + Math.random() * 9000),
-      ...complaintData,
-      status: "Open",
-      createdAt: new Date().toISOString()
-    };
-    all.push(newComplaint);
-    updateStoredComplaints(all);
-    return newComplaint;
+  const createComplaint = async (complaintData, files = []) => {
+    try {
+      // Call real backend service
+      const res = await complaintService.createComplaint(complaintData, files);
+
+      // Sync with localStorage for legacy components that might still read it
+      const all = getStoredComplaints();
+      all.push(res);
+      updateStoredComplaints(all);
+
+      return res;
+    } catch (e) {
+      // Fallback
+      const all = getStoredComplaints();
+      const newComplaint = {
+        id: "CMP-" + Math.floor(1000 + Math.random() * 9000),
+        ...complaintData,
+        status: "Open",
+        createdAt: new Date().toISOString()
+      };
+      all.push(newComplaint);
+      updateStoredComplaints(all);
+      return newComplaint;
+    }
   };
 
   const addUserToOrg = async (userData) => {

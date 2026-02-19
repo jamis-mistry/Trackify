@@ -1,62 +1,23 @@
-import React, { useState } from "react";
-import { Search, Filter, ChevronDown, MoreVertical } from "lucide-react";
+import React, { useState, useEffect, useContext } from "react";
+import { Search, Filter, ChevronDown, MoreVertical, Paperclip, Image as ImageIcon, Video, Eye } from "lucide-react";
+import { AuthContext } from "../../context/AuthContext";
 
 const ComplaintsList = () => {
-    // Mock Data
-    const initialComplaints = [
-        {
-            id: "CMP-1001",
-            subject: "Internet speed is very slow",
-            category: "Technical",
-            status: "Open",
-            createdAt: "2026-01-24",
-            priority: "High"
-        },
-        {
-            id: "CMP-1002",
-            subject: "Billing amount discrepancy",
-            category: "Billing",
-            status: "In Progress",
-            createdAt: "2026-01-22",
-            priority: "Medium"
-        },
-        {
-            id: "CMP-1003",
-            subject: "AC unit making loud noise",
-            category: "Infrastructure",
-            status: "Resolved",
-            createdAt: "2026-01-20",
-            priority: "Low"
-        },
-        {
-            id: "CMP-1004",
-            subject: "Login portal not accessible",
-            category: "Technical",
-            status: "Resolved",
-            createdAt: "2026-01-18",
-            priority: "High"
-        },
-        {
-            id: "CMP-1005",
-            subject: "Request for new parking sticker",
-            category: "Admin",
-            status: "Open",
-            createdAt: "2026-01-25",
-            priority: "Low"
-        },
-        {
-            id: "CMP-1006",
-            subject: "Water cooler leakage on 3rd floor",
-            category: "Infrastructure",
-            status: "In Progress",
-            createdAt: "2026-01-26",
-            priority: "Medium"
-        }
-    ];
-
-    const [complaints, setComplaints] = useState(initialComplaints);
+    const { user, getMockComplaints } = useContext(AuthContext);
+    const [complaints, setComplaints] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [filterStatus, setFilterStatus] = useState("All");
+
+    useEffect(() => {
+        const fetchComplaints = async () => {
+            setLoading(true);
+            const data = await getMockComplaints(user?.role === 'user' ? (user?._id || user?.id) : null);
+            setComplaints(data);
+            setLoading(false);
+        };
+        fetchComplaints();
+    }, [user, getMockComplaints]);
 
     // Filter Logic
     const filteredComplaints = complaints.filter(complaint => {
@@ -125,39 +86,64 @@ const ComplaintsList = () => {
                     <thead>
                         <tr className="bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider border-b border-gray-100 dark:border-gray-800">
                             <th className="px-6 py-4 font-semibold">Complaint ID</th>
-                            <th className="px-6 py-4 font-semibold">Subject</th>
+                            <th className="px-6 py-4 font-semibold">Title</th>
                             <th className="px-6 py-4 font-semibold">Category</th>
+                            <th className="px-6 py-4 font-semibold">Attachments</th>
                             <th className="px-6 py-4 font-semibold">Status</th>
                             <th className="px-6 py-4 font-semibold">Created Date</th>
                             <th className="px-6 py-4 font-semibold text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                        {filteredComplaints.length > 0 ? (
+                        {loading ? (
+                            <tr>
+                                <td colSpan="7" className="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                                    <div className="flex justify-center items-center gap-2">
+                                        <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                                        Fetching records...
+                                    </div>
+                                </td>
+                            </tr>
+                        ) : filteredComplaints.length > 0 ? (
                             filteredComplaints.map((complaint) => (
                                 <tr
-                                    key={complaint.id}
+                                    key={complaint._id || complaint.id}
                                     className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150 group"
                                 >
                                     <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                                        {complaint.id}
+                                        {complaint._id || complaint.id}
                                     </td>
                                     <td className="px-6 py-4 text-gray-700 dark:text-gray-300 font-medium">
-                                        {complaint.subject}
+                                        {complaint.title || complaint.subject}
                                     </td>
                                     <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
                                         {complaint.category}
                                     </td>
                                     <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2">
+                                            {complaint.attachments && complaint.attachments.length > 0 ? (
+                                                <button
+                                                    onClick={() => window.open(`http://localhost:5000${complaint.attachments[0].url}`, '_blank')}
+                                                    className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                                                >
+                                                    {complaint.attachments[0].type === 'image' ? <ImageIcon size={14} /> : <Video size={14} />}
+                                                    <span>{complaint.attachments.length} {complaint.attachments.length === 1 ? 'file' : 'files'}</span>
+                                                </button>
+                                            ) : (
+                                                <span className="text-gray-400 text-xs">-</span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
                                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusStyle(complaint.status)}`}>
                                             <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${complaint.status === "Open" ? "bg-yellow-500" :
-                                                    complaint.status === "In Progress" ? "bg-blue-500" : "bg-green-500"
+                                                complaint.status === "In Progress" ? "bg-blue-500" : "bg-green-500"
                                                 }`}></span>
                                             {complaint.status}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-gray-500 dark:text-gray-400 text-sm">
-                                        {complaint.createdAt}
+                                        {new Date(complaint.createdAt).toLocaleDateString()}
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
@@ -168,7 +154,7 @@ const ComplaintsList = () => {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="6" className="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                                <td colSpan="7" className="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
                                     No complaints found matching your filters.
                                 </td>
                             </tr>

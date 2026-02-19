@@ -10,7 +10,7 @@ const PublicHeader = () => {
     const { theme, toggleTheme } = useTheme();
 
     return (
-        <header className="fixed top-0 left-0 w-full z-50 bg-white/10 dark:bg-black/10 backdrop-blur-md border-b border-indigo-100/20 dark:border-indigo-900/20 transition-all duration-300">
+        <header className="fixed top-0 left-0 w-full z-50 bg-white dark:bg-black border-b border-indigo-100/20 dark:border-indigo-900/20 transition-all duration-300">
             <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
                 <Link to="/" className="flex items-center gap-3">
                     <img src="/trackify-logo.png" alt="Trackify" className="w-16 h-16 object-contain" />
@@ -30,7 +30,7 @@ const PublicHeader = () => {
                         onClick={toggleTheme}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className="p-2 rounded-xl bg-gray-100/50 dark:bg-gray-800/50 text-gray-700 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors backdrop-blur-sm"
+                        className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                         aria-label="Toggle Dark Mode"
                     >
                         {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}

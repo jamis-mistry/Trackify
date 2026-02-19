@@ -55,9 +55,20 @@ exports.createComplaint = async (req, res, next) => {
             if (user) userName = user.name;
         }
 
+        // Map uploaded files to URLs
+        let attachments = [];
+        if (req.files && req.files.length > 0) {
+            attachments = req.files.map(file => ({
+                url: `/uploads/${file.filename}`,
+                type: file.mimetype.startsWith('video') ? 'video' : 'image',
+                name: file.originalname
+            }));
+        }
+
         const complaint = await Complaint.create({
             ...req.body,
             userName,
+            attachments,
             status: 'Open',
             createdAt: new Date()
         });

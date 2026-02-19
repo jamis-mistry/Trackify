@@ -33,7 +33,7 @@ const Loader = () => {
                     <img
                         src="/trackify-logo.png"
                         alt="Loading..."
-                        className="w-24 h-24 object-contain drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]"
+                        className="w-24 h-24 object-contain drop-shadow-[0_0_25px_rgba(255,255,255,0.3)] filter brightness-110"
                     />
                 </motion.div>
             </div>

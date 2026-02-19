@@ -34,7 +34,7 @@ const Header = () => {
     };
 
     return (
-        <header className="h-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md sticky top-0 z-20 px-8 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 transition-colors duration-300">
+        <header className="h-20 bg-white dark:bg-gray-900 sticky top-0 z-20 px-8 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 transition-colors duration-300">
             <div className="flex items-center gap-4">
                 <h2 className="text-xl font-medium text-gray-800 dark:text-gray-100">
                     Hello, <span className="font-bold text-gray-900 dark:text-white">{userName}</span>
