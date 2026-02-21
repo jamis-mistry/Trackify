@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import { ClipboardList, Clock, CheckCircle, AlertCircle, PlusCircle, Activity } from "lucide-react";
 import { Link } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -51,13 +52,22 @@ const GlowingStatCard = ({ icon: Icon, label, value, color, delay }) => (
 );
 
 const UserDashboard = () => {
-  // Temporary mock data (later from API)
-  const stats = {
-    total: 12,
-    open: 3,
-    inProgress: 5,
-    resolved: 4,
-  };
+  const { user, getMockComplaints } = useContext(AuthContext);
+  const [stats, setStats] = useState({ total: 0, open: 0, inProgress: 0, resolved: 0 });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const filters = user?.organizationName ? { organization: user.organizationName } : { userId: user?._id || user?.id };
+      const complaints = await getMockComplaints(filters);
+      setStats({
+        total: complaints.length,
+        open: complaints.filter(c => c.status === "Open").length,
+        inProgress: complaints.filter(c => c.status === "In Progress").length,
+        resolved: complaints.filter(c => c.status === "Resolved").length,
+      });
+    };
+    fetchStats();
+  }, [user, getMockComplaints]);
 
   return (
     <DashboardLayout role="user">

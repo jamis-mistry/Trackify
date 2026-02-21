@@ -72,7 +72,10 @@ const Register = () => {
       await register({ name, email, password, role: role.toLowerCase(), orgName });
       // Min wait time for animation smoothness
       await new Promise(resolve => setTimeout(resolve, 800));
-      navigate("/"); // Redirect to home/dashboard
+      // Redirect based on role
+      if (role === "organization") navigate("/organization/dashboard");
+      else if (role === "worker") navigate("/worker/dashboard");
+      else navigate("/user/dashboard");
     } catch (err) {
       setError(err.message || "Registration failed");
     } finally {
@@ -101,7 +104,7 @@ const Register = () => {
           </div>
           <h1 className="text-5xl lg:text-6xl font-black text-gray-900 dark:text-white leading-tight mb-6 tracking-tight">
             Start your <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 animate-gradient-x">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600">
               journey
             </span>{" "}
             today.

@@ -6,16 +6,11 @@ import {
 } from "lucide-react";
 import PublicHeader from "../components/layout/PublicHeader";
 import Footer from "../components/layout/Footer";
-import AnimatedBackground from "../components/layout/AnimatedBackground";
 import { Link } from "react-router-dom";
 
 const Features = () => {
     return (
         <div className="min-h-screen transition-colors duration-300 relative">
-            {/* Fixed Live Background */}
-            <div className="fixed inset-0 -z-50">
-                <AnimatedBackground />
-            </div>
 
             <PublicHeader />
 

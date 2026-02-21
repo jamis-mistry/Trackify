@@ -8,11 +8,24 @@ import { UserPlus, Search, MoreVertical, Mail, Shield, User, CheckCircle, XCircl
 import Modal from "../../components/common/Modal";
 
 const ManageUsers = () => {
-  const { addUserToOrg, getOrgUsers, deleteUserFromOrg, user } = useContext(AuthContext);
+  const {
+    addUserToOrg,
+    getOrgUsers,
+    deleteUserFromOrg,
+    user,
+    getMockComplaints,
+    assignTaskToWorker,
+    findUserByEmail
+  } = useContext(AuthContext);
+
   const toast = useToast();
   const [users, setUsers] = useState([]);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+
+  const [searchEmail, setSearchEmail] = useState("");
+  const [foundUser, setFoundUser] = useState(null);
+  const [hasSearched, setHasSearched] = useState(false);
 
   useEffect(() => {
     // Load users from "Mock DB"
@@ -36,9 +49,40 @@ const ManageUsers = () => {
   });
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [assignTarget, setAssignTarget] = useState(null); // { _id, name }
+  const [complaints, setComplaints] = useState([]);
+  const [selectedComplaint, setSelectedComplaint] = useState("");
+  const [assigning, setAssigning] = useState(false);
+  const [assignMsg, setAssignMsg] = useState("");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSearchUser = (e) => {
+    e.preventDefault();
+    setError("");
+    if (!searchEmail) return;
+
+    const result = findUserByEmail(searchEmail);
+    setFoundUser(result || null);
+    setHasSearched(true);
+
+    if (result) {
+      // Check if already in this org
+      if (result.organizationName === user?.organizationName || result.orgName === user?.organizationName) {
+        setError("This user is already a member of your organization.");
+        setFoundUser(null);
+        return;
+      }
+
+      setFormData({
+        name: result.name,
+        email: result.email,
+        role: "user"
+      });
+    }
   };
 
   const handleAddUser = async (e) => {
@@ -50,10 +94,14 @@ const ManageUsers = () => {
       await addUserToOrg({ email: formData.email, name: formData.name, role: formData.role });
       toast.success("User added successfully!");
 
-      // Update local list
-      setUsers(getOrgUsers());
+      // Update local list correctly
+      const updated = await getOrgUsers();
+      setUsers(updated);
 
       setFormData({ name: "", email: "", role: "user" });
+      setSearchEmail("");
+      setFoundUser(null);
+      setHasSearched(false);
       setShowForm(false);
     } catch (err) {
       setError(err.message);
@@ -89,6 +137,39 @@ const ManageUsers = () => {
     }
   };
 
+  const openAssignModal = async (worker) => {
+    setAssignTarget(worker);
+    setAssignMsg("");
+    setSelectedComplaint("");
+    try {
+      const data = await getMockComplaints();
+      // show only unresolved complaints in this org
+      const orgComplaints = (data || []).filter(
+        c => (c.organization === user?.organizationName || !c.organization) && c.status !== "Resolved"
+      );
+      setComplaints(orgComplaints);
+    } catch (e) {
+      setComplaints([]);
+    }
+    setAssignModalOpen(true);
+  };
+
+  const handleAssignTask = async () => {
+    if (!selectedComplaint || !assignTarget) return;
+    setAssigning(true);
+    setAssignMsg("");
+    try {
+      await assignTaskToWorker(selectedComplaint, assignTarget._id || assignTarget.id, assignTarget.name);
+      toast.success(`Task assigned to ${assignTarget.name}!`);
+      setAssignMsg("Task assigned successfully!");
+      setTimeout(() => { setAssignModalOpen(false); setAssignMsg(""); }, 1500);
+    } catch (e) {
+      setAssignMsg("Error: " + e.message);
+    } finally {
+      setAssigning(false);
+    }
+  };
+
   const filteredUsers = users.filter(u =>
     u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -109,49 +190,96 @@ const ManageUsers = () => {
 
       {showForm && (
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 mb-8 animate-in fade-in slide-in-from-top-4 duration-300">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Add New User</h2>
-          <form onSubmit={handleAddUser} className="max-w-2xl">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Add User</h2>
+            <button onClick={() => { setShowForm(false); setHasSearched(false); setFoundUser(null); }} className="text-gray-400 hover:text-gray-500">
+              <XCircle size={20} />
+            </button>
+          </div>
+
+          <form onSubmit={handleSearchUser} className="mb-8">
+            <div className="flex gap-2">
+              <div className="flex-1">
                 <Input
-                  label="Full Name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="e.g. John Doe"
-                />
-              </div>
-              <div>
-                <Input
-                  label="Email"
                   type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="e.g. john@company.com"
+                  placeholder="Search user by email..."
+                  value={searchEmail}
+                  onChange={(e) => setSearchEmail(e.target.value)}
+                  className="w-full"
                 />
               </div>
-            </div>
-
-            <div className="mb-6">
-              <label className="block mb-1 font-medium text-sm text-gray-700 dark:text-gray-300">Role</label>
-              <select
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
-              >
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-
-            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-
-            <div className="flex justify-end">
-              <Button type="submit">Create User</Button>
+              <Button type="submit" variant="outline" className="h-[46px]">
+                <Search size={18} className="mr-2" />
+                Search
+              </Button>
             </div>
           </form>
+
+          {hasSearched && (
+            <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/50 text-red-600 dark:text-red-400 rounded-xl flex items-center gap-2 text-sm font-medium">
+                  <XCircle size={18} />
+                  {error}
+                </div>
+              )}
+
+              {foundUser ? (
+                <div className="bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/50 rounded-xl p-5 mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                      <User size={24} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 dark:text-white">{foundUser.name}</h4>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{foundUser.email}</p>
+                    </div>
+                    <div className="ml-auto">
+                      <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold rounded-lg uppercase tracking-wider">
+                        Found User
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : !error ? (
+                <div className="py-8 text-center bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 mb-6 font-medium text-gray-500 dark:text-gray-400">
+                  No user found with that email.
+                </div>
+              ) : null}
+
+              {foundUser && (
+                <form onSubmit={handleAddUser} className="max-w-2xl bg-gray-50/50 dark:bg-gray-800/30 p-5 rounded-xl border border-gray-100 dark:border-gray-800">
+                  <div className="mb-6">
+                    <label className="block mb-2 font-semibold text-sm text-gray-700 dark:text-gray-300">Select Role for {foundUser.name}</label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {["user", "worker", "admin"].map((r) => (
+                        <button
+                          key={r}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, role: r })}
+                          className={`py-3 px-4 rounded-xl border-2 text-sm font-bold capitalize transition-all ${formData.role === r
+                            ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
+                            : "border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-500 hover:border-gray-200"
+                            }`}
+                        >
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3">
+                    <Button variant="outline" type="button" onClick={() => { setHasSearched(false); setFoundUser(null); }}>
+                      Cancel
+                    </Button>
+                    <Button type="submit">
+                      Add to Organization
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -218,6 +346,15 @@ const ManageUsers = () => {
                   </td>
                   <td className="p-4 text-gray-500 dark:text-gray-400 text-sm">{u.createdAt || "Just now"}</td>
                   <td className="p-4 text-right">
+                    {u.role === 'worker' && (
+                      <button
+                        onClick={() => openAssignModal(u)}
+                        className="mr-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
+                        title="Assign a task"
+                      >
+                        Assign Task
+                      </button>
+                    )}
                     <button
                       onClick={() => toggleStatus(u.id)}
                       className={`text-sm font-medium transition-colors ${u.status === 'Active'
@@ -268,6 +405,64 @@ const ManageUsers = () => {
           >
             Delete
           </button>
+        </div>
+      </Modal>
+
+      {/* Assign Task Modal */}
+      <Modal
+        isOpen={assignModalOpen}
+        onClose={() => setAssignModalOpen(false)}
+        title={`Assign Task to ${assignTarget?.name}`}
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Select a complaint to assign to <span className="font-semibold text-gray-800 dark:text-gray-200">{assignTarget?.name}</span>. They will receive a notification.
+          </p>
+          {complaints.length === 0 ? (
+            <div className="text-center py-6 text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-xl">
+              No open complaints available in your organization.
+            </div>
+          ) : (
+            <div>
+              <label className="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Select Complaint
+              </label>
+              <select
+                value={selectedComplaint}
+                onChange={e => setSelectedComplaint(e.target.value)}
+                className="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+              >
+                <option value="">-- Choose a complaint --</option>
+                {complaints.map(c => (
+                  <option key={c._id || c.id} value={c._id || c.id}>
+                    [{c.priority || 'Med'}] [{c.category || 'General'}] {c.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {assignMsg && (
+            <p className={`text-sm font-medium ${assignMsg.includes('Error') ? 'text-red-500' : 'text-green-600'}`}>
+              {assignMsg}
+            </p>
+          )}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              onClick={() => setAssignModalOpen(false)}
+              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors font-medium text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAssignTask}
+              disabled={!selectedComplaint || assigning}
+              className="px-5 py-2 text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg transition-colors font-medium text-sm"
+            >
+              {assigning ? "Assigning..." : "Assign Task"}
+            </button>
+          </div>
         </div>
       </Modal>
     </DashboardLayout>

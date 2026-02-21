@@ -32,6 +32,7 @@ import OrgComplaints from "../pages/organization/OrgComplaints";
 // Worker pages	
 import WorkerDashboard from "../pages/worker/WorkerDashboard";
 import WorkerAssignments from "../pages/worker/WorkerAssignments";
+import WorkerHistory from "../pages/worker/WorkerHistory";
 
 // Public pages
 // Public pages
@@ -231,7 +232,7 @@ const AppRoutes = () => {
           path="/organization/complaints"
           element={
             <ProtectedRoute>
-              <RoleRoute role="organization">
+              <RoleRoute role={["organization", "worker"]}>
                 <OrgComplaints />
               </RoleRoute>
             </ProtectedRoute>
@@ -256,6 +257,17 @@ const AppRoutes = () => {
             <ProtectedRoute>
               <RoleRoute role="worker">
                 <WorkerAssignments />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/worker/history"
+          element={
+            <ProtectedRoute>
+              <RoleRoute role="worker">
+                <WorkerHistory />
               </RoleRoute>
             </ProtectedRoute>
           }

@@ -9,13 +9,17 @@ const RoleRoute = ({ role, children }) => {
     return <Navigate to="/login" />;
   }
 
-  if (user.role.toLowerCase() !== role.toLowerCase()) {
+  const allowedRoles = Array.isArray(role) ? role.map(r => r.toLowerCase()) : [role.toLowerCase()];
+
+  if (!allowedRoles.includes(user.role.toLowerCase())) {
     // Redirect based on actual role
     switch (user.role.toLowerCase()) {
       case "admin":
         return <Navigate to="/admin/dashboard" />;
       case "organization":
         return <Navigate to="/organization/dashboard" />;
+      case "worker":
+        return <Navigate to="/worker/dashboard" />;
       default:
         return <Navigate to="/user/dashboard" />;
     }

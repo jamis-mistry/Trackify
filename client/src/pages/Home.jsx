@@ -39,10 +39,6 @@ const Home = () => {
                         transition={{ duration: 0.6 }}
                         className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50/80 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-sm font-medium mb-8 backdrop-blur-sm"
                     >
-                        <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-                        </span>
                         Trackify v2.0 is live
                     </motion.div>
 
@@ -77,7 +73,7 @@ const Home = () => {
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={handleGetStarted}
-                            className="h-14 px-10 text-lg font-bold text-white shadow-xl shadow-indigo-600/30 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_auto] animate-gradient-x hover:shadow-2xl transition-all duration-300 w-full sm:w-auto"
+                            className="h-14 px-10 text-lg font-bold text-white shadow-xl shadow-indigo-600/30 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-2xl transition-all duration-300 w-full sm:w-auto"
                         >
                             {isAuthenticated ? "Go to Dashboard" : "Get Started Now"}
                         </motion.button>
@@ -196,20 +192,10 @@ const Home = () => {
                 {/* Background Gradients */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-indigo-900/50 to-purple-900/50 opacity-40"></div>
-                    <motion.div
-                        animate={{
-                            scale: [1, 1.2, 1],
-                            opacity: [0.3, 0.5, 0.3]
-                        }}
-                        transition={{ duration: 8, repeat: Infinity }}
+                    <div
                         className="absolute -top-[20%] -right-[10%] w-[600px] h-[600px] bg-indigo-600/30 rounded-full blur-[100px]"
                     />
-                    <motion.div
-                        animate={{
-                            scale: [1, 1.2, 1],
-                            opacity: [0.3, 0.5, 0.3]
-                        }}
-                        transition={{ duration: 10, repeat: Infinity, delay: 1 }}
+                    <div
                         className="absolute -bottom-[20%] -left-[10%] w-[600px] h-[600px] bg-purple-600/30 rounded-full blur-[100px]"
                     />
                 </div>
@@ -247,7 +233,7 @@ const Home = () => {
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="h-16 px-10 text-xl font-bold text-white shadow-xl shadow-indigo-600/40 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_auto] animate-gradient-x hover:shadow-2xl transition-all duration-300 w-full sm:w-auto"
+                                className="h-16 px-10 text-xl font-bold text-white shadow-xl shadow-indigo-600/40 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-2xl transition-all duration-300 w-full sm:w-auto"
                             >
                                 Start Free Trial
                             </motion.button>

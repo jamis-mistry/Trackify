@@ -1,9 +1,10 @@
 import React, { useContext, useState, useEffect } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import DashboardLayout from "../../components/layout/DashboardLayout";
-import { User, Mail, Shield, Building2, Calendar, Fingerprint, Camera, Save, X } from "lucide-react";
+import { User, Mail, Shield, Building2, Calendar, Fingerprint, Camera, Save, X, History, Tag } from "lucide-react";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
+import { Link } from "react-router-dom";
 
 const UserProfile = () => {
     const { user, updateUserProfile } = useContext(AuthContext);
@@ -151,8 +152,38 @@ const UserProfile = () => {
                                         <ProfileItem icon={Shield} label="Role" value={user.role} capitalize />
                                         <ProfileItem icon={Building2} label="Organization" value={user.organizationName || "N/A"} />
                                         <ProfileItem icon={Fingerprint} label="User ID" value={`#${user.id}`} />
+                                        {user.role === 'worker' && user.workerCategories?.length > 0 && (
+                                            <div className="flex items-start gap-3">
+                                                <div className="p-2 rounded-lg bg-white dark:bg-gray-800 text-gray-400 shadow-sm">
+                                                    <Tag size={18} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">My Categories</p>
+                                                    <div className="flex flex-wrap gap-1.5 mt-1">
+                                                        {user.workerCategories.map(cat => (
+                                                            <span key={cat} className="text-xs font-semibold px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800">
+                                                                {cat}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </ProfileSection>
                                 </div>
+
+                                {/* Work History Link — workers only */}
+                                {user.role === 'worker' && (
+                                    <div className="mt-6">
+                                        <Link
+                                            to="/worker/history"
+                                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-semibold text-sm transition-colors shadow-sm"
+                                        >
+                                            <History size={16} />
+                                            View Work History
+                                        </Link>
+                                    </div>
+                                )}
                             </>
                         ) : (
                             // Edit Mode

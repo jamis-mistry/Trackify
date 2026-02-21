@@ -241,29 +241,55 @@ const AuthProvider = ({ children }) => {
     return getStoredUsers().map(({ password, ...u }) => u);
   };
 
-  const getMockComplaints = async (userId = null) => {
+  const getMockComplaints = async (filters = {}) => {
+    // Backward compatibility for legacy code passing only userId as string
+    const actualFilters = typeof filters === 'string' ? { userId: filters } : filters;
+    const { userId, organization } = actualFilters;
+
     try {
-      const realComplaints = await complaintService.getAllComplaints();
-      if (userId) return realComplaints.filter(c => c.userId === userId);
-      return realComplaints;
+      const all = await complaintService.getAllComplaints();
+      let filtered = all;
+      if (userId) filtered = filtered.filter(c => c.userId === userId || c.user === userId);
+      if (organization) filtered = filtered.filter(c => c.organization === organization || c.organizationName === organization);
+      return filtered;
     } catch (e) {
       const all = getStoredComplaints();
-      if (userId) return all.filter(c => c.userId === userId);
-      return all;
+      let filtered = all;
+      if (userId) filtered = filtered.filter(c => c.userId === userId || c.user === userId);
+      if (organization) filtered = filtered.filter(c => c.organization === organization || c.organizationName === organization);
+      return filtered;
     }
   };
 
+  // ---- Org Notification Helper ----
+  // Pushes a notification into the org's notification bucket.
+  // The org account is identified by matching organizationName.
+  const notifyOrg = (orgName, notification) => {
+    if (!orgName) return;
+    // Find the org user record to get their _id
+    const users = getStoredUsers();
+    const orgUser = users.find(u => u.role === 'organization' && u.organizationName === orgName);
+    const orgKey = orgUser ? `trackify_notifs_${orgUser._id}` : `trackify_notifs_org_${orgName}`;
+    const existing = JSON.parse(localStorage.getItem(orgKey) || '[]');
+    existing.unshift({
+      id: Date.now().toString(),
+      ...notification,
+      time: new Date().toLocaleString(),
+      read: false,
+    });
+    localStorage.setItem(orgKey, JSON.stringify(existing));
+  };
+
   const createComplaint = async (complaintData, files = []) => {
+    let result;
     try {
       // Call real backend service
       const res = await complaintService.createComplaint(complaintData, files);
-
       // Sync with localStorage for legacy components that might still read it
       const all = getStoredComplaints();
       all.push(res);
       updateStoredComplaints(all);
-
-      return res;
+      result = res;
     } catch (e) {
       // Fallback
       const all = getStoredComplaints();
@@ -275,8 +301,69 @@ const AuthProvider = ({ children }) => {
       };
       all.push(newComplaint);
       updateStoredComplaints(all);
-      return newComplaint;
+      result = newComplaint;
     }
+
+    // Notify the organization about the new complaint
+    if (complaintData.organization || complaintData.organizationName) {
+      const orgName = complaintData.organization || complaintData.organizationName;
+      notifyOrg(orgName, {
+        type: 'new_complaint',
+        title: `New Complaint: ${complaintData.title}`,
+        message: `A member submitted a ${complaintData.priority || 'Medium'} priority ${complaintData.category || ''} complaint.`,
+        category: complaintData.category,
+        priority: complaintData.priority,
+        complaintId: result.id || result._id,
+      });
+    }
+
+    return result;
+  };
+
+  // Update task progress & notify org
+  const updateTaskProgress = async (complaintId, { progress, status, workNote }) => {
+    await new Promise(r => setTimeout(r, 300));
+    const all = getStoredComplaints();
+    const idx = all.findIndex(c => (c._id || c.id) === complaintId);
+    if (idx === -1) throw new Error('Task not found');
+
+    const workerName = user?.name || 'Worker';
+    const orgName = all[idx].organization || all[idx].organizationName;
+
+    // Append the new note to existing work log
+    const prevLog = all[idx].workLog || [];
+    if (workNote?.trim()) {
+      prevLog.push({
+        note: workNote.trim(),
+        progress,
+        status,
+        by: workerName,
+        at: new Date().toISOString(),
+      });
+    }
+
+    all[idx] = {
+      ...all[idx],
+      progress: progress ?? all[idx].progress ?? 0,
+      status: status || all[idx].status,
+      workLog: prevLog,
+      lastUpdated: new Date().toISOString(),
+    };
+    localStorage.setItem('trackify_db_complaints', JSON.stringify(all));
+
+    // Notify the org
+    notifyOrg(orgName, {
+      type: 'worker_update',
+      title: `Progress Update: ${all[idx].title}`,
+      message: `${workerName} updated task to ${progress}% — "${workNote?.slice(0, 80) || 'No note'}". Status: ${status}.`,
+      category: all[idx].category,
+      priority: all[idx].priority,
+      complaintId,
+      workerName,
+      progress,
+    });
+
+    return all[idx];
   };
 
   const addUserToOrg = async (userData) => {
@@ -332,6 +419,63 @@ const AuthProvider = ({ children }) => {
     return newUser;
   };
 
+  // ---- Worker Assignment Functions ----
+
+  // Get all assignments for a specific worker
+  const getWorkerAssignments = (workerId) => {
+    const stored = localStorage.getItem('trackify_db_complaints');
+    const all = stored ? JSON.parse(stored) : [];
+    return all.filter(c => c.assignedWorkerId === workerId);
+  };
+
+  // Assign a complaint/task to a worker (used by org admin)
+  const assignTaskToWorker = async (complaintId, workerId, workerName) => {
+    await new Promise(r => setTimeout(r, 300));
+    // Update the complaint record
+    const stored = localStorage.getItem('trackify_db_complaints');
+    const all = stored ? JSON.parse(stored) : [];
+    const idx = all.findIndex(c => (c._id || c.id) === complaintId);
+    if (idx === -1) throw new Error('Complaint not found');
+
+    all[idx].assignedWorkerId = workerId;
+    all[idx].assignedWorkerName = workerName;
+    all[idx].assignedDate = new Date().toISOString();
+    all[idx].status = all[idx].status === 'Open' ? 'In Progress' : all[idx].status;
+    localStorage.setItem('trackify_db_complaints', JSON.stringify(all));
+
+    // Push notification to worker
+    const notifKey = `trackify_notifs_${workerId}`;
+    const existing = JSON.parse(localStorage.getItem(notifKey) || '[]');
+    existing.unshift({
+      title: `New Task Assigned: ${all[idx].title}`,
+      message: `You have been assigned a ${all[idx].priority || 'Medium'} priority task in the ${all[idx].category || 'General'} category.`,
+      time: new Date().toLocaleString(),
+      complaintId,
+    });
+    localStorage.setItem(notifKey, JSON.stringify(existing));
+
+    return all[idx];
+  };
+
+  // Update worker profile (including workerCategories)
+  const updateWorkerProfile = async (updates) => {
+    await new Promise(r => setTimeout(r, 400));
+    if (!user) throw new Error('No user logged in');
+
+    const users = getStoredUsers();
+    const idx = users.findIndex(u => u._id === user._id || u.email === user.email);
+    if (idx === -1) throw new Error('User record not found');
+
+    const updatedUser = { ...users[idx], ...updates };
+    users[idx] = updatedUser;
+    updateStoredUsers(users);
+
+    const sessionUser = { ...updatedUser, password: undefined };
+    localStorage.setItem('trackify_user', JSON.stringify(sessionUser));
+    setUser(sessionUser);
+    return sessionUser;
+  };
+
   const deleteUserFromOrg = async (userId) => {
     await new Promise(r => setTimeout(r, 500));
     const users = getStoredUsers();
@@ -356,6 +500,11 @@ const AuthProvider = ({ children }) => {
     users.splice(idx, 1);
     updateStoredUsers(users);
     return true;
+  };
+
+  const findUserByEmail = (email) => {
+    const users = getStoredUsers();
+    return users.find(u => u.email.toLowerCase() === email.toLowerCase());
   };
 
   const getOrgUsers = async () => {
@@ -425,7 +574,13 @@ const AuthProvider = ({ children }) => {
         getOrgUsers,
         getMockUsers,
         deleteUserAny,
-        updateUserProfile
+        updateUserProfile,
+        getWorkerAssignments,
+        assignTaskToWorker,
+        updateWorkerProfile,
+        updateTaskProgress,
+        notifyOrg,
+        findUserByEmail
       }}
     >
       {children}

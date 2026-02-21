@@ -22,7 +22,7 @@ const Sidebar = ({ role, isCollapsed, toggleSidebar }) => {
   const links = {
     user: [
       { name: "Dashboard", path: "/user/dashboard", icon: LayoutDashboard },
-      { name: "My Complaints", path: "/user/complaints", icon: FileText },
+      { name: "Browse Complaints", path: "/user/complaints", icon: FileText },
       { name: "History", path: "/user/history", icon: History },
       { name: "Profile", path: "/user/profile", icon: User },
     ],
@@ -40,6 +40,8 @@ const Sidebar = ({ role, isCollapsed, toggleSidebar }) => {
     worker: [
       { name: "Dashboard", path: "/worker/dashboard", icon: LayoutDashboard },
       { name: "My Assignments", path: "/worker/assignments", icon: Briefcase },
+      { name: "Org Complaints", path: "/organization/complaints", icon: Building2 },
+      { name: "Work History", path: "/worker/history", icon: History },
       { name: "Profile", path: "/user/profile", icon: User },
     ],
   };

@@ -3,6 +3,7 @@ import { AuthContext } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { Bell, Search, ChevronDown, LogOut, User, Settings, Sun, Moon } from "lucide-react";
 import { Link } from "react-router-dom";
+import NotificationBell from "./NotificationBell";
 
 const Header = () => {
     const { user, logout } = useContext(AuthContext);
@@ -60,10 +61,7 @@ const Header = () => {
                     >
                         {theme === 'dark' ? <Moon size={22} /> : <Sun size={22} />}
                     </button>
-                    <button className="relative p-2 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-full hover:bg-indigo-50 dark:hover:bg-gray-800">
-                        <Bell size={22} />
-                        <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-gray-900"></span>
-                    </button>
+                    <NotificationBell />
 
                     <div className="h-8 w-[1px] bg-gray-200 dark:bg-gray-700"></div>
 

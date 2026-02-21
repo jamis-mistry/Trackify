@@ -9,15 +9,23 @@ const ComplaintsList = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [filterStatus, setFilterStatus] = useState("All");
 
+    const [viewMode, setViewMode] = useState("organization"); // "my" or "organization"
+
     useEffect(() => {
         const fetchComplaints = async () => {
             setLoading(true);
-            const data = await getMockComplaints(user?.role === 'user' ? (user?._id || user?.id) : null);
+            const filters = {};
+            if (viewMode === "my") {
+                filters.userId = user?._id || user?.id;
+            } else if (user?.organizationName) {
+                filters.organization = user.organizationName;
+            }
+            const data = await getMockComplaints(filters);
             setComplaints(data);
             setLoading(false);
         };
         fetchComplaints();
-    }, [user, getMockComplaints]);
+    }, [user, getMockComplaints, viewMode]);
 
     // Filter Logic
     const filteredComplaints = complaints.filter(complaint => {
@@ -45,7 +53,27 @@ const ComplaintsList = () => {
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 transition-colors duration-300">
             {/* Header: Title + Controls */}
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white">My Complaints</h2>
+                <div className="flex flex-col gap-1">
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">
+                        {viewMode === "my" ? "My Complaints" : "Organization Complaints"}
+                    </h2>
+                    {user?.organizationName && (
+                        <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg w-fit mt-2">
+                            <button
+                                onClick={() => setViewMode("my")}
+                                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${viewMode === "my" ? "bg-white dark:bg-gray-700 text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                            >
+                                My Only
+                            </button>
+                            <button
+                                onClick={() => setViewMode("organization")}
+                                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${viewMode === "organization" ? "bg-white dark:bg-gray-700 text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                            >
+                                All Org
+                            </button>
+                        </div>
+                    )}
+                </div>
 
                 <div className="flex flex-col sm:flex-row gap-3">
                     {/* Search Bar */}

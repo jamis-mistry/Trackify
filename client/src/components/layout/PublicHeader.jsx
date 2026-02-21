@@ -41,7 +41,7 @@ const PublicHeader = () => {
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="px-6 py-2.5 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/30 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_auto] animate-gradient-x hover:shadow-xl transition-all duration-300"
+                                className="px-6 py-2.5 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/30 bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-xl transition-all duration-300"
                             >
                                 Dashboard
                             </motion.button>
@@ -55,7 +55,7 @@ const PublicHeader = () => {
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="px-6 py-2.5 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/30 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_auto] animate-gradient-x hover:shadow-xl transition-all duration-300"
+                                    className="px-6 py-2.5 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/30 bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-xl transition-all duration-300"
                                 >
                                     Get Started
                                 </motion.button>
