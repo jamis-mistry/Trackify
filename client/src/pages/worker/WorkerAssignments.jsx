@@ -8,7 +8,6 @@ import {
     Send, ListChecks, Pencil, X, BarChart2
 } from "lucide-react";
 
-const CATEGORIES = ["All", "Technical", "Service", "Billing", "Infrastructure", "Other"];
 const STATUSES_FILTER = ["All", "Open", "In Progress", "Resolved"];
 const STATUSES_UPDATE = ["Open", "In Progress", "Resolved"];
 
@@ -174,7 +173,14 @@ const WorkLog = ({ log }) => {
 };
 
 const WorkerAssignments = () => {
-    const { user, getWorkerAssignments, updateTaskProgress } = useContext(AuthContext);
+    const { user, getWorkerAssignments, updateTaskProgress, categories } = useContext(AuthContext);
+
+    const workerCategories = categories
+        .filter(c => c.type === 'worker')
+        .map(c => c.name);
+
+    const CATEGORIES = ["All", ...workerCategories];
+
     const [assignments, setAssignments] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [filterCategory, setFilterCategory] = useState("All");

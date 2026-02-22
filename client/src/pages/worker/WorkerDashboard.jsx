@@ -9,11 +9,14 @@ import {
     Building2, Wrench, History, ChevronRight, X, Filter
 } from "lucide-react";
 
-const CATEGORIES = ["Technical", "Service", "Billing", "Infrastructure", "Other"];
-
 const WorkerDashboard = () => {
-    const { user, getWorkerAssignments, updateWorkerProfile } = useContext(AuthContext);
+    const { user, getWorkerAssignments, updateWorkerProfile, categories } = useContext(AuthContext);
     const [assignments, setAssignments] = useState([]);
+
+    const CATEGORIES = categories
+        .filter(c => c.type === 'worker')
+        .map(c => c.name);
+
     const [selectedCategories, setSelectedCategories] = useState(
         user?.workerCategories || []
     );

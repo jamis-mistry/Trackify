@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import { AuthContext } from "../../context/AuthContext";
-import { Users, Building2, FileText, CheckCircle, ArrowRight, Sparkles } from "lucide-react";
+import { Users, Building2, FileText, CheckCircle, ArrowRight, Sparkles, Tag, Briefcase } from "lucide-react";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -29,6 +29,7 @@ const AdminDashboard = () => {
     totalComplaints: 0,
     totalUsers: 0,
     totalOrgs: 0,
+    totalWorkers: 0,
     open: 0,
     resolved: 0
   });
@@ -44,9 +45,11 @@ const AdminDashboard = () => {
         const usersList = Array.isArray(allUsers) ? allUsers : [];
         const complaintsList = Array.isArray(allComplaints) ? allComplaints : [];
 
-        // Split users by role
-        const organizations = usersList.filter(u => u.role === 'organization');
-        const regularUsers = usersList.filter(u => u.role === 'user');
+        // User Stats
+        const totalUsers = usersList.length;
+        const organizations = usersList.filter(u => u.role === 'organization').length;
+        const workers = usersList.filter(u => u.role === 'worker').length;
+        const regularUsers = usersList.filter(u => u.role === 'user').length;
 
         // Complaint Stats
         const open = complaintsList.filter(c => c.status === 'Open').length;
@@ -54,8 +57,9 @@ const AdminDashboard = () => {
 
         setStats({
           totalComplaints: complaintsList.length,
-          totalUsers: regularUsers.length,
-          totalOrgs: organizations.length,
+          totalUsers: regularUsers,
+          totalOrgs: organizations,
+          totalWorkers: workers,
           open,
           resolved
         });
@@ -90,7 +94,7 @@ const AdminDashboard = () => {
           </motion.div>
 
           {/* Stats Grid with Glowing Borders */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-12">
             <GlowingStatCard
               icon={Building2}
               label="Total Organizations"
@@ -99,30 +103,37 @@ const AdminDashboard = () => {
               delay={0}
             />
             <GlowingStatCard
+              icon={Briefcase}
+              label="Total Workers"
+              value={stats.totalWorkers}
+              color="from-amber-500 to-orange-400"
+              delay={0.1}
+            />
+            <GlowingStatCard
               icon={Users}
               label="Total Users"
               value={stats.totalUsers}
               color="from-indigo-500 to-purple-500"
-              delay={0.1}
+              delay={0.2}
             />
             <GlowingStatCard
               icon={FileText}
               label="Total Complaints"
               value={stats.totalComplaints}
               color="from-fuchsia-500 to-pink-500"
-              delay={0.2}
+              delay={0.3}
             />
             <GlowingStatCard
               icon={CheckCircle}
               label="Resolved Issues"
               value={stats.resolved}
               color="from-emerald-500 to-teal-400"
-              delay={0.3}
+              delay={0.4}
             />
           </div>
 
           {/* Quick Actions / Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <PremiumActionCard
               title="View Organizations"
               description={`Access directory of ${stats.totalOrgs} organizations.`}
@@ -132,11 +143,19 @@ const AdminDashboard = () => {
             />
 
             <PremiumActionCard
-              title="View Users"
-              description={`Manage ${stats.totalUsers} individual users.`}
+              title="Manage Users"
+              description={`Control roles and permissions for ${stats.totalUsers} platform users.`}
               icon={Users}
               href="/admin/users"
               gradient="from-indigo-600 to-purple-600"
+            />
+
+            <PremiumActionCard
+              title="Manage Categories"
+              description="Configure worker and issue categories."
+              icon={Tag}
+              href="/admin/categories"
+              gradient="from-fuchsia-600 to-pink-600"
             />
           </div>
         </motion.div>

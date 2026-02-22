@@ -9,14 +9,19 @@ import {
   Users,
   Building2,
   Briefcase,
-  Menu
+  Menu,
+  Tag,
+  Shield
 } from "lucide-react";
 
 
 const Sidebar = ({ role, isCollapsed, toggleSidebar }) => {
   const location = useLocation();
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => {
+    const fullPath = location.pathname + location.search;
+    return fullPath === path || location.pathname === path;
+  };
 
   // Sidebar links based on role
   const links = {
@@ -29,8 +34,11 @@ const Sidebar = ({ role, isCollapsed, toggleSidebar }) => {
     admin: [
       { name: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
       { name: "Organizations", path: "/admin/organizations", icon: Building2 },
-      { name: "Users", path: "/admin/users", icon: Users },
+      { name: "Manage Users", path: "/admin/users", icon: Users },
       { name: "All Complaints", path: "/admin/complaints", icon: FileText },
+      { name: "Worker Categories", path: "/admin/categories?tab=worker", icon: Briefcase },
+      { name: "Issue Categories", path: "/admin/categories?tab=issue", icon: Tag },
+      { name: "Manage Roles", path: "/admin/roles", icon: Shield },
     ],
     organization: [
       { name: "Dashboard", path: "/organization/dashboard", icon: LayoutDashboard },

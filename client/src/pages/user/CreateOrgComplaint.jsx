@@ -8,10 +8,15 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
 const CreateOrgComplaint = () => {
-  const { user, createComplaint } = useContext(AuthContext);
+  const { user, createComplaint, categories } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  const issueCategories = categories
+    .filter(c => c.type === 'issue')
+    .map(c => c.name);
+
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("Internal");
+  const [category, setCategory] = useState(issueCategories[0] || "Internal");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("Low");
   const [message, setMessage] = useState("");
@@ -19,19 +24,19 @@ const CreateOrgComplaint = () => {
 
   // Redirect if no organization (though route guard should handle this)
   if (!user?.organizationName && user?.role !== 'admin') {
-     return (
-        <DashboardLayout role="user">
-          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
-            <div className="bg-red-50 p-6 rounded-2xl border border-red-100 max-w-lg">
-              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-              <h1 className="text-2xl font-bold mb-2 text-slate-900">Access Restricted</h1>
-              <p className="text-slate-600">
-                You are not currently associated with an active organization.
-              </p>
-            </div>
+    return (
+      <DashboardLayout role="user">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
+          <div className="bg-red-50 p-6 rounded-2xl border border-red-100 max-w-lg">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold mb-2 text-slate-900">Access Restricted</h1>
+            <p className="text-slate-600">
+              You are not currently associated with an active organization.
+            </p>
           </div>
-        </DashboardLayout>
-      );
+        </div>
+      </DashboardLayout>
+    );
   }
 
   const handleSubmit = async (e) => {
@@ -66,10 +71,10 @@ const CreateOrgComplaint = () => {
       setCategory("Internal");
       setDescription("");
       setPriority("Low");
-      
+
       // Optional: Redirect back to list after short delay
       setTimeout(() => {
-          navigate('/user/org-complaints');
+        navigate('/user/org-complaints');
       }, 1500);
 
     } catch (err) {
@@ -131,12 +136,9 @@ const CreateOrgComplaint = () => {
                     onChange={(e) => setCategory(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
                   >
-                    <option>Internal</option>
-                    <option>HR</option>
-                    <option>Facility</option>
-                    <option>IT Support</option>
-                    <option>Management</option>
-                    <option>Other</option>
+                    {issueCategories.map(cat => (
+                      <option key={cat}>{cat}</option>
+                    ))}
                   </select>
                 </div>
 

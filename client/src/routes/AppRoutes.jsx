@@ -23,6 +23,8 @@ import AllComplaints from "../pages/admin/AllComplaints";
 import UpdateComplaint from "../pages/admin/UpdateComplaint";
 import AdminOrganizations from "../pages/admin/AdminOrganizations";
 import AdminUsers from "../pages/admin/AdminUsers";
+import AdminCategories from "../pages/admin/AdminCategories";
+import AdminRoles from "../pages/admin/AdminRoles";
 
 // Organization pages
 import OrgDashboard from "../pages/organization/OrgDashboard";
@@ -200,6 +202,28 @@ const AppRoutes = () => {
             <ProtectedRoute>
               <RoleRoute role="admin">
                 <AdminUsers />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/categories"
+          element={
+            <ProtectedRoute>
+              <RoleRoute role="admin">
+                <AdminCategories />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/roles"
+          element={
+            <ProtectedRoute>
+              <RoleRoute role="admin">
+                <AdminRoles />
               </RoleRoute>
             </ProtectedRoute>
           }

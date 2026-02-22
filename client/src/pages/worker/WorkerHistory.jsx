@@ -26,11 +26,16 @@ const getStatusConfig = (status) => {
     }
 };
 
-const CATEGORIES = ["All", "Technical", "Service", "Billing", "Infrastructure", "Other"];
-const STATUSES = ["All", "Open", "In Progress", "Resolved", "Rejected"];
-
 const WorkerHistory = () => {
-    const { user, getWorkerAssignments } = useContext(AuthContext);
+    const { user, getWorkerAssignments, categories } = useContext(AuthContext);
+
+    const workerCategories = categories
+        .filter(c => c.type === 'worker')
+        .map(c => c.name);
+
+    const CATEGORIES = ["All", ...workerCategories];
+    const STATUSES = ["All", "Open", "In Progress", "Resolved", "Rejected"];
+
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");

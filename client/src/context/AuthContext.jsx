@@ -1,13 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { createContext } from "react";
 import complaintService from "../services/complaintService";
+import categoryService from "../services/categoryService";
+import roleService from "../services/roleService";
 
-export const AuthContext = createContext(null);
+import { AuthContext } from "./AuthContextProvider";
+export { AuthContext };
 
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState([]);
+  const [roles, setRoles] = useState([]);
 
   useEffect(() => {
     const data = localStorage.getItem("trackify_user");
@@ -40,6 +45,16 @@ const AuthProvider = ({ children }) => {
 
   const updateStoredComplaints = (complaints) => {
     localStorage.setItem('trackify_db_complaints', JSON.stringify(complaints));
+  };
+
+  const getStoredCategories = () => {
+    const stored = localStorage.getItem('trackify_db_categories');
+    return stored ? JSON.parse(stored) : [];
+  };
+
+  const updateStoredCategories = (cats) => {
+    localStorage.setItem('trackify_db_categories', JSON.stringify(cats));
+    setCategories(cats);
   };
 
   // Seed Admin if empty or update if old admin exists
@@ -149,6 +164,8 @@ const AuthProvider = ({ children }) => {
     }
   }, []);
 
+
+
   const login = async (email, password) => {
     // Simulate async
     await new Promise(r => setTimeout(r, 500));
@@ -236,12 +253,12 @@ const AuthProvider = ({ children }) => {
     return { success: true, data: sessionUser, token: "mock-new-token" };
   };
 
-  const getMockUsers = async () => {
+  const getMockUsers = useCallback(async () => {
     // Return all users from LS (except passwords)
     return getStoredUsers().map(({ password, ...u }) => u);
-  };
+  }, []);
 
-  const getMockComplaints = async (filters = {}) => {
+  const getMockComplaints = useCallback(async (filters = {}) => {
     // Backward compatibility for legacy code passing only userId as string
     const actualFilters = typeof filters === 'string' ? { userId: filters } : filters;
     const { userId, organization } = actualFilters;
@@ -259,6 +276,52 @@ const AuthProvider = ({ children }) => {
       if (organization) filtered = filtered.filter(c => c.organization === organization || c.organizationName === organization);
       return filtered;
     }
+  }, []);
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const data = await categoryService.getCategories();
+      setCategories(data);
+    } catch (error) {
+      console.error("Error fetching categories", error);
+    }
+  }, []);
+
+  const fetchRoles = useCallback(async () => {
+    try {
+      const data = await roleService.getRoles();
+      setRoles(data);
+    } catch (error) {
+      console.error("Error fetching roles", error);
+    }
+  }, []);
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchCategories();
+    fetchRoles();
+  }, [fetchCategories, fetchRoles]);
+
+  const addCategory = async (catData) => {
+    const newCat = await categoryService.createCategory(catData);
+    setCategories(prev => [...prev, newCat]);
+    return newCat;
+  };
+
+  const deleteCategory = async (id) => {
+    await categoryService.deleteCategory(id);
+    setCategories(prev => prev.filter(c => c.id !== id));
+  };
+
+  const addRole = async (roleData) => {
+    const newRole = await roleService.addRole(roleData);
+    setRoles(prev => [...prev, newRole]);
+    return newRole;
+  };
+
+  const deleteRole = async (id) => {
+    await roleService.deleteRole(id);
+    setRoles(prev => prev.filter(r => r.id !== id));
   };
 
   // ---- Org Notification Helper ----
@@ -502,6 +565,17 @@ const AuthProvider = ({ children }) => {
     return true;
   };
 
+  const updateUserRole = async (userId, newRole) => {
+    await new Promise(r => setTimeout(r, 500));
+    const users = getStoredUsers();
+    const idx = users.findIndex(u => u._id === userId || u.id === userId);
+    if (idx === -1) throw new Error("User not found");
+
+    users[idx].role = newRole;
+    updateStoredUsers(users);
+    return users[idx];
+  };
+
   const findUserByEmail = (email) => {
     const users = getStoredUsers();
     return users.find(u => u.email.toLowerCase() === email.toLowerCase());
@@ -574,13 +648,22 @@ const AuthProvider = ({ children }) => {
         getOrgUsers,
         getMockUsers,
         deleteUserAny,
+        updateUserRole,
         updateUserProfile,
         getWorkerAssignments,
         assignTaskToWorker,
         updateWorkerProfile,
         updateTaskProgress,
         notifyOrg,
-        findUserByEmail
+        findUserByEmail,
+        categories,
+        roles,
+        fetchCategories,
+        fetchRoles,
+        addCategory,
+        deleteCategory,
+        addRole,
+        deleteRole,
       }}
     >
       {children}

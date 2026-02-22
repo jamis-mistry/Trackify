@@ -45,7 +45,7 @@ const FloatingLabelInput = ({ id, type, label, value, onChange, icon: Icon, righ
 };
 
 const Register = () => {
-  const { register } = useContext(AuthContext);
+  const { register, categories } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
@@ -54,8 +54,21 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [orgName, setOrgName] = useState("");
   const [role, setRole] = useState("user"); // "user" | "organization"
+  const [selectedCategories, setSelectedCategories] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const availableCategories = categories
+    .filter(c => c.type === 'worker')
+    .map(c => c.name);
+
+  const toggleCategory = (cat) => {
+    setSelectedCategories(prev =>
+      prev.includes(cat)
+        ? prev.filter(c => c !== cat)
+        : [...prev, cat]
+    );
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -66,10 +79,22 @@ const Register = () => {
       return;
     }
 
+    if (role === "worker" && selectedCategories.length === 0) {
+      setError("Please select at least one category");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await register({ name, email, password, role: role.toLowerCase(), orgName });
+      await register({
+        name,
+        email,
+        password,
+        role: role.toLowerCase(),
+        orgName,
+        workerCategories: role === "worker" ? selectedCategories : []
+      });
       // Min wait time for animation smoothness
       await new Promise(resolve => setTimeout(resolve, 800));
       // Redirect based on role
@@ -224,6 +249,35 @@ const Register = () => {
                         icon={Briefcase}
                         required={role === "organization"}
                       />
+                    </motion.div>
+                  )}
+                  {role === "worker" && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, height: 0 }}
+                      animate={{ opacity: 1, y: 0, height: "auto" }}
+                      exit={{ opacity: 0, y: -10, height: 0 }}
+                      className="overflow-hidden mb-6"
+                    >
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 ml-1">
+                        Working Categories (Select at least one)
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {availableCategories.map(cat => (
+                          <motion.button
+                            key={cat}
+                            type="button"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => toggleCategory(cat)}
+                            className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all border-2 ${selectedCategories.includes(cat)
+                              ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-500/30"
+                              : "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-indigo-200 dark:hover:border-indigo-900"
+                              }`}
+                          >
+                            {cat}
+                          </motion.button>
+                        ))}
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>

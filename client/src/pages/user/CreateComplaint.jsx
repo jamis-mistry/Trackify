@@ -7,9 +7,14 @@ import { FileText, Send, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 const CreateComplaint = () => {
-  const { user, createComplaint } = useContext(AuthContext);
+  const { user, createComplaint, categories } = useContext(AuthContext);
+
+  const issueCategories = categories
+    .filter(c => c.type === 'issue')
+    .map(c => c.name);
+
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("Technical");
+  const [category, setCategory] = useState(issueCategories[0] || "Technical");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("Low");
   const [attachments, setAttachments] = useState([]);
@@ -132,11 +137,9 @@ const CreateComplaint = () => {
                     onChange={(e) => setCategory(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all"
                   >
-                    <option>Technical</option>
-                    <option>Service</option>
-                    <option>Billing</option>
-                    <option>Infrastructure</option>
-                    <option>Other</option>
+                    {issueCategories.map(cat => (
+                      <option key={cat}>{cat}</option>
+                    ))}
                   </select>
                 </div>
 
