@@ -3,6 +3,7 @@ import { createContext } from "react";
 import complaintService from "../services/complaintService";
 import categoryService from "../services/categoryService";
 import roleService from "../services/roleService";
+import authService from "../services/authService";
 
 import { AuthContext } from "./AuthContextProvider";
 export { AuthContext };
@@ -19,6 +20,13 @@ const AuthProvider = ({ children }) => {
     if (data) {
       try {
         const parsed = JSON.parse(data);
+        // Force logout if user is from legacy mock system (has _id but no numeric id)
+        if (parsed._id && !parsed.id) {
+          console.warn("Clearing legacy mock user session");
+          localStorage.removeItem("trackify_user");
+          setLoading(false);
+          return;
+        }
         setUser(parsed);
         setIsAuthenticated(true);
       } catch (err) {
@@ -167,54 +175,44 @@ const AuthProvider = ({ children }) => {
 
 
   const login = async (email, password) => {
-    // Simulate async
-    await new Promise(r => setTimeout(r, 500));
-
-    const users = getStoredUsers();
-    const foundUser = users.find(u => u.email === email && u.password === password);
-
-    if (!foundUser) {
-      throw new Error("Invalid credentials");
+    try {
+      const response = await authService.login(email, password);
+      if (response.success) {
+        setUser(response.user);
+        setIsAuthenticated(true);
+        return { success: true, user: response.user };
+      }
+    } catch (error) {
+      console.error("Login failed", error);
+      throw error;
     }
-
-    const userData = { ...foundUser, password: undefined }; // Don't put password in session
-    localStorage.setItem("trackify_user", JSON.stringify(userData));
-    localStorage.setItem("trackify_token", "mock-jwt-token"); // Fake token
-    setUser(userData);
-    setIsAuthenticated(true);
-    return { success: true, data: userData, token: "mock-jwt-token" };
   };
 
   const register = async (userData) => {
-    await new Promise(r => setTimeout(r, 500));
-    const users = getStoredUsers();
+    try {
+      const payload = {
+        full_name: userData.name || userData.full_name,
+        email: userData.email,
+        password: userData.password,
+        role: userData.role || "user"
+      };
 
-    if (users.find(u => u.email === userData.email)) {
-      throw new Error("Email already registered");
+      const response = await authService.register(payload);
+      if (response.success) {
+        const newUser = response.user;
+        setUser(newUser);
+        setIsAuthenticated(true);
+        localStorage.setItem("trackify_user", JSON.stringify(newUser));
+        return { success: true, user: newUser };
+      }
+    } catch (error) {
+      console.error("Registration failed", error);
+      throw error;
     }
-
-    const newUser = {
-      _id: Date.now().toString(),
-      ...userData,
-      organizationName: userData.orgName || userData.organizationName, // Ensure consistency
-      createdAt: new Date().toISOString()
-    };
-
-    users.push(newUser);
-    updateStoredUsers(users);
-
-    // Auto login
-    const sessionUser = { ...newUser, password: undefined };
-    localStorage.setItem("trackify_user", JSON.stringify(sessionUser));
-    localStorage.setItem("trackify_token", "mock-jwt-token");
-    setUser(sessionUser);
-    setIsAuthenticated(true);
-
-    return { success: true, data: sessionUser, token: "mock-jwt-token" };
   };
 
-  // --- Mocking other features ---
-
+  // --- Mocking other features (kept for compatibility if needed) ---
+  
   const forgotPassword = async (email) => {
     await new Promise(r => setTimeout(r, 500));
     const users = getStoredUsers();
@@ -266,13 +264,26 @@ const AuthProvider = ({ children }) => {
     try {
       const all = await complaintService.getAllComplaints();
       let filtered = all;
-      if (userId) filtered = filtered.filter(c => c.userId === userId || c.user === userId);
+      if (userId) {
+        // userId might be number or string, so use loose equality or convert
+        const uidStr = String(userId);
+        filtered = filtered.filter(c => {
+           const cUid = c.userId || c.user_id || c.user; // Check all possible field names
+           return String(cUid) === uidStr;
+        });
+      }
       if (organization) filtered = filtered.filter(c => c.organization === organization || c.organizationName === organization);
       return filtered;
     } catch (e) {
       const all = getStoredComplaints();
       let filtered = all;
-      if (userId) filtered = filtered.filter(c => c.userId === userId || c.user === userId);
+      if (userId) {
+        const uidStr = String(userId);
+        filtered = filtered.filter(c => {
+           const cUid = c.userId || c.user_id || c.user;
+           return String(cUid) === uidStr;
+        });
+      }
       if (organization) filtered = filtered.filter(c => c.organization === organization || c.organizationName === organization);
       return filtered;
     }

@@ -32,11 +32,13 @@ const UserHistory = () => {
 
     useEffect(() => {
         const fetchHistory = async () => {
-            if (user?._id) {
+            const userId = user?.id || user?._id;
+            if (userId) {
                 try {
                     // Fetch all complaints for now, effectively "History"
                     // In a real app, this might be filtered by status "Resolved" or sorted by date
-                    const data = await getMockComplaints(user._id);
+                    // Use the ID correctly
+                    const data = await getMockComplaints(userId);
                     setHistory(Array.isArray(data) ? data : []);
                 } catch (e) {
                     console.error("Failed to load history", e);

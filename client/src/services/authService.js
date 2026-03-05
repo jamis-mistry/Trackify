@@ -1,35 +1,35 @@
-// Later change this to your backend URL
+import axios from "axios";
+
 const API_URL = "http://localhost:5000/api/auth";
 
-const login = async (email) => {
-  // REAL VERSION (when backend is ready)
-  // const response = await axios.post(`${API_URL}/login`, { email, password });
-  // return response.data;
-
-  // MOCK VERSION (for now)
-  return {
-    id: 1,
-    name: "John Doe",
-    email,
-    role: "user", // user | admin | organization
-    token: "fake-jwt-token",
-  };
+const login = async (email, password) => {
+  const response = await axios.post(`${API_URL}/login`, { email, password });
+  if (response.data.success && response.data.user) {
+    localStorage.setItem("trackify_user", JSON.stringify(response.data.user));
+  }
+  return response.data;
 };
 
-const register = async () => {
-  // REAL VERSION
-  // return axios.post(`${API_URL}/register`, userData);
-
-  // MOCK
-  return true;
+const register = async (userData) => {
+  const response = await axios.post(`${API_URL}/register`, userData);
+  return response.data;
 };
 
 const logout = () => {
   localStorage.removeItem("trackify_user");
 };
 
-export default {
+const getCurrentUser = () => {
+  const userStr = localStorage.getItem("trackify_user");
+  if (userStr) return JSON.parse(userStr);
+  return null;
+};
+
+const authService = {
   login,
   register,
   logout,
+  getCurrentUser,
 };
+
+export default authService;
