@@ -88,30 +88,7 @@ const Home = () => {
                         </Link>
                     </motion.div>
 
-                    {/* Stats Dashboard Preview Mockup */}
-                    <motion.div
-                        style={{ y: y }}
-                        initial={{ opacity: 0, y: 40 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 0.4 }}
-                        className="mt-20 relative mx-auto max-w-5xl rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 shadow-2xl overflow-hidden backdrop-blur-sm"
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-tr from-indigo-50/50 to-purple-50/50 dark:from-indigo-900/10 dark:to-purple-900/10 pointer-events-none"></div>
-                        <div className="p-2 bg-gray-100/80 dark:bg-gray-800/80 flex items-center gap-2 border-b border-gray-200 dark:border-gray-700">
-                            <div className="flex gap-1.5 ml-2">
-                                <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                                <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                                <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                            </div>
-                        </div>
-                        <div className="aspect-[16/9] flex items-center justify-center text-gray-400 dark:text-gray-600 bg-gray-50/50 dark:bg-black/20">
-                            {/* In a real app, put a screenshot image here */}
-                            <div className="text-center p-12">
-                                <BarChart2 size={64} className="mx-auto mb-4 opacity-50" />
-                                <p className="text-lg font-medium">Interactive Dashboard Interface</p>
-                            </div>
-                        </div>
-                    </motion.div>
+
                 </div>
             </section>
 
