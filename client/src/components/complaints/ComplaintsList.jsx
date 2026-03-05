@@ -18,7 +18,7 @@ const ComplaintsList = () => {
             if (viewMode === "my") {
                 filters.userId = user?._id || user?.id;
             } else if (user?.organizationName) {
-                filters.organization = user.organizationName;
+                filters.organizationName = user.organizationName;
             }
             const data = await getMockComplaints(filters);
             setComplaints(data);
@@ -29,8 +29,8 @@ const ComplaintsList = () => {
 
     // Filter Logic
     const filteredComplaints = complaints.filter(complaint => {
-        const matchesSearch = complaint.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            complaint.id.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = (complaint.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (complaint._id || "").toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = filterStatus === "All" || complaint.status === filterStatus;
         return matchesSearch && matchesStatus;
     });
@@ -151,7 +151,7 @@ const ComplaintsList = () => {
                                         <div className="flex items-center gap-2">
                                             {complaint.attachments && complaint.attachments.length > 0 ? (
                                                 <button
-                                                    onClick={() => window.open(`http://localhost:5000${complaint.attachments[0].url}`, '_blank')}
+                                                    onClick={() => window.open(`http://localhost:5002${complaint.attachments[0].url}`, '_blank')}
                                                     className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
                                                 >
                                                     {complaint.attachments[0].type === 'image' ? <ImageIcon size={14} /> : <Video size={14} />}

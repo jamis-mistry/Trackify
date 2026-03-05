@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 
 const DATA_FILE = path.join(__dirname, '..', '..', 'data', 'users.json');
 
@@ -103,11 +102,7 @@ class User {
         return await bcrypt.compare(enteredPassword, this.password);
     }
 
-    getSignedJwtToken() {
-        return jwt.sign({ id: this._id }, process.env.JWT_SECRET || 'secret', {
-            expiresIn: process.env.JWT_EXPIRE || '30d'
-        });
-    }
+
 }
 
 // Enhance findOne to handle the specific OTP expiration query pattern

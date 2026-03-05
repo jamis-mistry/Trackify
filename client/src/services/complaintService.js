@@ -1,13 +1,11 @@
 import axios from 'axios';
 
-const API_URL = "http://localhost:5000/api/complaints";
+const API_URL = "http://localhost:5002/api/complaints";
 
-// Helper to attach token
+// Helper to attach headers if needed
 const _getAuthHeader = () => {
-  const token = localStorage.getItem("trackify_token");
   return {
     headers: {
-      Authorization: `Bearer ${token}`,
     },
   };
 };
@@ -29,8 +27,7 @@ const createComplaint = async (complaintData, files = []) => {
 
     const response = await axios.post(API_URL, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
-        // Authorization: `Bearer ${token}` // If needed
+        'Content-Type': 'multipart/form-data'
       }
     });
 
@@ -58,10 +55,10 @@ const getMyComplaints = async (userId) => {
   }
 };
 
-// Get all complaints (Admin / Organization)
-const getAllComplaints = async () => {
+// Get all complaints (Admin / Organization / Worker)
+const getAllComplaints = async (filters = {}) => {
   try {
-    const response = await axios.get(API_URL);
+    const response = await axios.get(API_URL, { params: filters });
     return response.data.data;
   } catch (error) {
     console.error("Error fetching all complaints", error);

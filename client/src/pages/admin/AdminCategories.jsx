@@ -54,7 +54,7 @@ const AdminCategories = () => {
     const handleDeleteCategory = async (id) => {
         if (window.confirm("Are you sure you want to delete this category?")) {
             try {
-                await deleteCategory(id);
+                await deleteCategory(id, activeTab);
             } catch (error) {
                 console.error("Delete category error", error);
             }

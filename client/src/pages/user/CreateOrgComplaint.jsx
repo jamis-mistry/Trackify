@@ -56,11 +56,9 @@ const CreateOrgComplaint = () => {
       category,
       description,
       priority,
-      user: user.name,
+      userName: user.name,
       userId: user._id || user.id,
-      organization: user.organizationName,
-      organizationId: user.organizationId,
-      type: "organization" // Distinguish from platform complaints if needed
+      organizationName: user.organizationName
     };
 
     try {

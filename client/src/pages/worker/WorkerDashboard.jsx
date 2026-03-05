@@ -5,15 +5,16 @@ import MetricCard from "../../components/dashboard/MetricCard";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    CheckCircle, Clock, AlertCircle, Bell, BellOff, Settings, Tag,
-    Building2, Wrench, History, ChevronRight, X, Filter
+    CheckCircle, Clock, AlertCircle, Tag,
+    Building2, Wrench, History, ChevronRight, Filter
 } from "lucide-react";
 
 const WorkerDashboard = () => {
     const { user, getWorkerAssignments, updateWorkerProfile, categories } = useContext(AuthContext);
     const [assignments, setAssignments] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const CATEGORIES = categories
+    const workerCategories = (categories || [])
         .filter(c => c.type === 'worker')
         .map(c => c.name);
 
@@ -27,12 +28,27 @@ const WorkerDashboard = () => {
     const isInOrg = !!(user?.organizationName);
 
     useEffect(() => {
-        if (isInOrg && getWorkerAssignments) {
-            const all = getWorkerAssignments(user._id || user.id);
-            setAssignments(all);
+        const fetchAssignments = async () => {
+            if (isInOrg && getWorkerAssignments && user) {
+                setLoading(true);
+                try {
+                    const data = await getWorkerAssignments(user._id || user.id);
+                    setAssignments(Array.isArray(data) ? data : []);
+                } catch (e) {
+                    console.error("Failed to fetch worker assignments", e);
+                } finally {
+                    setLoading(false);
+                }
+            } else {
+                setLoading(false);
+            }
+        };
+
+        fetchAssignments();
+        if (user?.workerCategories) {
+            setSelectedCategories(user.workerCategories);
         }
-        if (user?.workerCategories) setSelectedCategories(user.workerCategories);
-    }, [user]);
+    }, [user, isInOrg, getWorkerAssignments]);
 
     const toggleCategory = (cat) => {
         setSelectedCategories(prev =>
@@ -44,7 +60,7 @@ const WorkerDashboard = () => {
         setSavingCategories(true);
         try {
             if (updateWorkerProfile) {
-                await updateWorkerProfile({ workerCategories: selectedCategories });
+                await updateWorkerProfile({ workerCategories: selectedCategories, email: user.email });
             }
             setCategoryMsg("Categories saved!");
             setTimeout(() => setCategoryMsg(""), 2500);
@@ -59,9 +75,21 @@ const WorkerDashboard = () => {
     const completed = assignments.filter(a => a.status === "Resolved");
     const highPriority = assignments.filter(a => a.priority === "High");
 
+    if (loading) {
+        return (
+            <DashboardLayout role="worker">
+                <div className="flex items-center justify-center min-h-[60vh]">
+                    <div className="flex flex-col items-center gap-2">
+                        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                        <p className="text-gray-500 font-medium">Loading Dashboard...</p>
+                    </div>
+                </div>
+            </DashboardLayout>
+        );
+    }
+
     return (
         <DashboardLayout role="worker">
-
             <div className="max-w-6xl mx-auto">
                 {/* Header */}
                 <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -111,7 +139,7 @@ const WorkerDashboard = () => {
                                     Choose the categories you specialize in. You'll receive tasks matching these categories.
                                 </p>
                                 <div className="flex flex-wrap gap-3 mb-5">
-                                    {CATEGORIES.map(cat => (
+                                    {workerCategories.map(cat => (
                                         <button
                                             key={cat}
                                             onClick={() => toggleCategory(cat)}
@@ -213,7 +241,7 @@ const WorkerDashboard = () => {
                             <div className="space-y-3">
                                 {pending.slice(0, 5).map((task, i) => (
                                     <motion.div
-                                        key={task._id || task.id || i}
+                                        key={task._id || i}
                                         initial={{ opacity: 0, x: -10 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: i * 0.07 }}

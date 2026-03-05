@@ -64,10 +64,9 @@ const CreateComplaint = () => {
       category,
       description,
       priority,
-      user: user.name,
+      userName: user.name,
       userId: user._id || user.id,
-      organization: user.organizationName,
-      organizationId: user.organizationId
+      organizationName: user.organizationName
     };
 
     try {

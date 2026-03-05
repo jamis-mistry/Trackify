@@ -1,19 +1,20 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { createContext } from "react";
 import complaintService from "../services/complaintService";
 import categoryService from "../services/categoryService";
 import roleService from "../services/roleService";
+import authService from "../services/authService";
+import organizationService from "../services/organizationService";
 
-import { AuthContext } from "./AuthContextProvider";
-export { AuthContext };
+export const AuthContext = React.createContext();
 
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState([]); // This will hold both types
   const [roles, setRoles] = useState([]);
 
+  // Session recovery
   useEffect(() => {
     const data = localStorage.getItem("trackify_user");
     if (data) {
@@ -23,269 +24,119 @@ const AuthProvider = ({ children }) => {
         setIsAuthenticated(true);
       } catch (err) {
         console.error("Auth init error", err);
+        localStorage.removeItem("trackify_user");
       }
     }
     setLoading(false);
   }, []);
 
-  // --- LocalStorage Helper ---
-  const getStoredUsers = () => {
-    const stored = localStorage.getItem('trackify_db_users');
-    return stored ? JSON.parse(stored) : [];
-  };
-
-  const getStoredComplaints = () => {
-    const stored = localStorage.getItem('trackify_db_complaints');
-    return stored ? JSON.parse(stored) : [];
-  };
-
-  const updateStoredUsers = (users) => {
-    localStorage.setItem('trackify_db_users', JSON.stringify(users));
-  };
-
-  const updateStoredComplaints = (complaints) => {
-    localStorage.setItem('trackify_db_complaints', JSON.stringify(complaints));
-  };
-
-  const getStoredCategories = () => {
-    const stored = localStorage.getItem('trackify_db_categories');
-    return stored ? JSON.parse(stored) : [];
-  };
-
-  const updateStoredCategories = (cats) => {
-    localStorage.setItem('trackify_db_categories', JSON.stringify(cats));
-    setCategories(cats);
-  };
-
-  // Seed Admin if empty or update if old admin exists
-  useEffect(() => {
-    const users = getStoredUsers();
-
-    // Reliable Admin Fix: Find any admin or specific email and force consistency
-    const adminIndex = users.findIndex(u => u.email === "admin01@gmail.com" || u.email === "admin@gmail.com" || u.role === 'admin');
-
-    if (adminIndex !== -1) {
-      // Update existing admin
-      let updated = false;
-      if (users[adminIndex].email !== "admin01@gmail.com") { users[adminIndex].email = "admin01@gmail.com"; updated = true; }
-      if (users[adminIndex].password !== "admin@123") { users[adminIndex].password = "admin@123"; updated = true; }
-      if (users[adminIndex].role !== "admin") { users[adminIndex].role = "admin"; updated = true; }
-      if (!users[adminIndex].organizationName) { users[adminIndex].organizationName = "Trackify Corp"; updated = true; }
-
-      if (updated) {
-        console.log("Admin credentials/data patched in localStorage");
-        updateStoredUsers(users);
-      }
-    } else {
-      // specific admin not found, inject it
-      const seedAdmin = {
-        _id: "admin-seed-forced",
-        name: "Super Admin",
-        email: "admin01@gmail.com",
-        password: "admin@123",
-        role: "admin",
-        organizationName: "Trackify Corp",
-        createdAt: new Date().toISOString()
-      };
-      users.push(seedAdmin);
-      updateStoredUsers(users);
-      console.log("Admin account injected");
-    }
-
-    // Migration: Fix missing organizationName for existing organizations AND users
-    let dbUpdated = false;
-    users.forEach(u => {
-      // Fix Organization Admins (role: organization)
-      if (u.role === 'organization' && u.orgName && !u.organizationName) {
-        u.organizationName = u.orgName;
-        dbUpdated = true;
-      }
-
-      // Fix Regular Users (role: user) - Assign to Default Org if missing (Self-healing)
-      if (u.role === 'user' && !u.organizationName) {
-        u.organizationName = "Acme Inc."; // Default fallback
-        dbUpdated = true;
-      }
-
-      // Fix active session if matched
-      if (dbUpdated) { // simplified check, might run a bit extra but safe
-        const storedSession = localStorage.getItem("trackify_user");
-        if (storedSession) {
-          const sessionUser = JSON.parse(storedSession);
-          if (sessionUser.email === u.email && !sessionUser.organizationName) {
-            sessionUser.organizationName = u.organizationName || "Acme Inc.";
-            localStorage.setItem("trackify_user", JSON.stringify(sessionUser));
-            setUser(sessionUser); // Force state update
-          }
-        }
-      }
-    });
-    if (dbUpdated) updateStoredUsers(users);
-
-    // Force Seed Org if missing (Migration fix) - runs regardless of admin existence
-    const orgExists = users.some(u => u.role === 'organization');
-    if (!orgExists) {
-      // Only seed Org if it's missing. Use push directly since we might have just updated admin
-      const seedOrg = {
-        _id: "org-seed",
-        name: "Acme Inc.",
-        email: "org@trackify.com",
-        password: "password123",
-        role: "organization",
-        organizationName: "Acme Inc.",
-        createdAt: new Date().toISOString()
-      };
-      users.push(seedOrg);
-      updateStoredUsers(users);
-    }
-
-    // Initial Seed if completely empty (fallback)
-    if (users.length === 0) {
-      const seedAdmin = {
-        _id: "admin-seed",
-        name: "Super Admin",
-        email: "admin01@gmail.com",
-        password: "admin@123",
-        role: "admin",
-        organizationName: "Trackify Corp",
-        createdAt: new Date().toISOString()
-      };
-
-      const seedOrg = {
-        _id: "org-seed",
-        name: "Acme Inc.",
-        email: "org@trackify.com",
-        password: "password123",
-        role: "organization",
-        organizationName: "Acme Inc.",
-        createdAt: new Date().toISOString()
-      };
-      updateStoredUsers([seedAdmin, seedOrg]);
-    }
-  }, []);
-
-
-
   const login = async (email, password) => {
-    // Simulate async
-    await new Promise(r => setTimeout(r, 500));
-
-    const users = getStoredUsers();
-    const foundUser = users.find(u => u.email === email && u.password === password);
-
-    if (!foundUser) {
-      throw new Error("Invalid credentials");
+    try {
+      const res = await authService.login(email, password);
+      const userData = res.data;
+      localStorage.setItem("trackify_user", JSON.stringify(userData));
+      setUser(userData);
+      setIsAuthenticated(true);
+      return { success: true, data: userData };
+    } catch (err) {
+      throw new Error(err.response?.data?.error || "Invalid credentials");
     }
-
-    const userData = { ...foundUser, password: undefined }; // Don't put password in session
-    localStorage.setItem("trackify_user", JSON.stringify(userData));
-    localStorage.setItem("trackify_token", "mock-jwt-token"); // Fake token
-    setUser(userData);
-    setIsAuthenticated(true);
-    return { success: true, data: userData, token: "mock-jwt-token" };
   };
 
   const register = async (userData) => {
-    await new Promise(r => setTimeout(r, 500));
-    const users = getStoredUsers();
-
-    if (users.find(u => u.email === userData.email)) {
-      throw new Error("Email already registered");
+    try {
+      const res = await authService.register(userData);
+      const sessionUser = res.data;
+      localStorage.setItem("trackify_user", JSON.stringify(sessionUser));
+      setUser(sessionUser);
+      setIsAuthenticated(true);
+      return { success: true, data: sessionUser };
+    } catch (err) {
+      throw new Error(err.response?.data?.error || err.message || "Registration failed");
     }
-
-    const newUser = {
-      _id: Date.now().toString(),
-      ...userData,
-      organizationName: userData.orgName || userData.organizationName, // Ensure consistency
-      createdAt: new Date().toISOString()
-    };
-
-    users.push(newUser);
-    updateStoredUsers(users);
-
-    // Auto login
-    const sessionUser = { ...newUser, password: undefined };
-    localStorage.setItem("trackify_user", JSON.stringify(sessionUser));
-    localStorage.setItem("trackify_token", "mock-jwt-token");
-    setUser(sessionUser);
-    setIsAuthenticated(true);
-
-    return { success: true, data: sessionUser, token: "mock-jwt-token" };
   };
 
-  // --- Mocking other features ---
-
   const forgotPassword = async (email) => {
-    await new Promise(r => setTimeout(r, 500));
-    const users = getStoredUsers();
-    const user = users.find(u => u.email === email);
-    if (!user) throw new Error("User not found");
-
-    // In local mode, we just say it worked. 
-    // We could store "otp" in localStorage if we really wanted to verify.
-    // Let's store a mock OTP
-    localStorage.setItem("trackify_temp_otp", "123456");
-    console.log("MOCK OTP SENT: 123456");
-    return { success: true, data: "OTP Sent" };
+    try {
+      const res = await authService.forgotPassword(email);
+      return res;
+    } catch (err) {
+      throw new Error(err.response?.data?.error || "User not found");
+    }
   };
 
   const verifyOtp = async (email, otp) => {
-    await new Promise(r => setTimeout(r, 300));
-    const storedOtp = localStorage.getItem("trackify_temp_otp");
-    if (otp !== storedOtp && otp !== "123456") throw new Error("Invalid OTP");
-    return { success: true };
+    try {
+      const res = await authService.verifyOtp(email, otp);
+      return res;
+    } catch (err) {
+      throw new Error(err.response?.data?.error || "Invalid OTP");
+    }
   };
 
   const resetPassword = async (email, otp, password) => {
-    await new Promise(r => setTimeout(r, 500));
-    const users = getStoredUsers();
-    const idx = users.findIndex(u => u.email === email);
-    if (idx === -1) throw new Error("User not found");
-
-    users[idx].password = password;
-    updateStoredUsers(users);
-
-    // Auto login
-    const sessionUser = { ...users[idx], password: undefined };
-    localStorage.setItem("trackify_user", JSON.stringify(sessionUser));
-    setUser(sessionUser);
-    setIsAuthenticated(true);
-    return { success: true, data: sessionUser, token: "mock-new-token" };
+    try {
+      const res = await authService.resetPassword(email, otp, password);
+      const sessionUser = res.data;
+      localStorage.setItem("trackify_user", JSON.stringify(sessionUser));
+      setUser(sessionUser);
+      setIsAuthenticated(true);
+      return { success: true, data: sessionUser };
+    } catch (err) {
+      throw new Error(err.response?.data?.error || "Password reset failed");
+    }
   };
 
   const getMockUsers = useCallback(async () => {
-    // Return all users from LS (except passwords)
-    return getStoredUsers().map(({ password, ...u }) => u);
-  }, []);
-
-  const getMockComplaints = useCallback(async (filters = {}) => {
-    // Backward compatibility for legacy code passing only userId as string
-    const actualFilters = typeof filters === 'string' ? { userId: filters } : filters;
-    const { userId, organization } = actualFilters;
-
     try {
-      const all = await complaintService.getAllComplaints();
-      let filtered = all;
-      if (userId) filtered = filtered.filter(c => c.userId === userId || c.user === userId);
-      if (organization) filtered = filtered.filter(c => c.organization === organization || c.organizationName === organization);
-      return filtered;
+      const response = await authService.getAllUsers();
+      return response.data || [];
     } catch (e) {
-      const all = getStoredComplaints();
-      let filtered = all;
-      if (userId) filtered = filtered.filter(c => c.userId === userId || c.user === userId);
-      if (organization) filtered = filtered.filter(c => c.organization === organization || c.organizationName === organization);
-      return filtered;
+      console.error('getMockUsers failed', e);
+      return [];
     }
   }, []);
 
-  const fetchCategories = useCallback(async () => {
+  const getMockComplaints = useCallback(async (filters = {}) => {
+    // Legacy support for passing string userId
+    const params = typeof filters === 'string' ? { userId: filters } : { ...filters };
+
+    // Normalize names for backend
+    if (params.organization) {
+      params.organizationName = params.organization;
+      delete params.organization;
+    }
+
     try {
-      const data = await categoryService.getCategories();
-      const fetchedCats = data && data.success !== undefined ? data.data : data;
-      setCategories(Array.isArray(fetchedCats) ? fetchedCats : []);
+      return await complaintService.getAllComplaints(params);
+    } catch (e) {
+      console.error("fetchComplaints failed", e);
+      return [];
+    }
+  }, []);
+
+  const fetchCategories = useCallback(async (type) => {
+    try {
+      const response = await categoryService.getCategories(type);
+      const fetchedCats = response.data;
+
+      if (type) {
+        // We add a 'type' property manually to the results because the 
+        // specialized backend collections don't store it anymore
+        const typedCats = Array.isArray(fetchedCats) ? fetchedCats.map(c => ({ ...c, type })) : [];
+        setCategories(prev => {
+          // Replace only the ones of this type
+          const filtered = prev.filter(c => c.type !== type);
+          return [...filtered, ...typedCats];
+        });
+      } else {
+        // If no type, the backend returns an object { issues, workers }
+        const issues = (fetchedCats.issues || []).map(c => ({ ...c, type: 'issue' }));
+        const workers = (fetchedCats.workers || []).map(c => ({ ...c, type: 'worker' }));
+        setCategories([...issues, ...workers]);
+      }
     } catch (error) {
       console.error("Error fetching categories", error);
-      setCategories(getStoredCategories());
     }
   }, []);
 
@@ -299,372 +150,187 @@ const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // Initial data fetch
   useEffect(() => {
     fetchCategories();
     fetchRoles();
   }, [fetchCategories, fetchRoles]);
 
   const addCategory = async (catData) => {
-    let newCat;
     try {
       const res = await categoryService.createCategory(catData);
-      newCat = res && res.success !== undefined ? res.data : res;
+      const newCat = res.data;
+      // Ensure we track it with type on the frontend
+      const typedCat = { ...newCat, type: catData.type };
+      setCategories(prev => [...prev, typedCat]);
+      return typedCat;
     } catch (error) {
-      console.error("Backend addCategory failed, using fallback", error);
-      newCat = {
-        id: "cat-" + Math.floor(1000 + Math.random() * 9000),
-        ...catData
-      };
+      throw new Error(error.response?.data?.error || "Failed to add category");
     }
-    setCategories(prev => {
-      const updated = [...prev, newCat];
-      localStorage.setItem('trackify_db_categories', JSON.stringify(updated));
-      return updated;
-    });
-    return newCat;
   };
 
-  const deleteCategory = async (id) => {
+  const deleteCategory = async (id, type) => {
     try {
-      await categoryService.deleteCategory(id);
+      await categoryService.deleteCategory(id, type);
+      setCategories(prev => prev.filter(c => (c._id || c.id) !== id));
     } catch (error) {
-      console.error("Backend deleteCategory failed, using fallback", error);
+      throw new Error(error.response?.data?.error || "Failed to delete category");
     }
-    setCategories(prev => {
-      // Use logical OR for fallback just in case some are _id
-      const updated = prev.filter(c => c.id !== id && c._id !== id);
-      localStorage.setItem('trackify_db_categories', JSON.stringify(updated));
-      return updated;
-    });
   };
 
   const addRole = async (roleData) => {
-    let newRole;
     try {
       const res = await roleService.addRole(roleData);
-      newRole = res && res.success !== undefined ? res.data : res;
+      const newRole = res && res.success !== undefined ? res.data : res;
+      setRoles(prev => [...prev, newRole]);
+      return newRole;
     } catch (error) {
-      console.error("Backend addRole failed, using fallback", error);
-      newRole = {
-        id: "role-" + Math.floor(1000 + Math.random() * 9000),
-        ...roleData
-      };
+      throw new Error(error.response?.data?.error || "Failed to add role");
     }
-    setRoles(prev => [...prev, newRole]);
-    return newRole;
   };
 
   const deleteRole = async (id) => {
     try {
       await roleService.deleteRole(id);
+      setRoles(prev => prev.filter(r => r.id !== id && r._id !== id));
     } catch (error) {
-      console.error("Backend deleteRole failed", error);
+      throw new Error(error.response?.data?.error || "Failed to delete role");
     }
-    setRoles(prev => prev.filter(r => r.id !== id && r._id !== id));
-  };
-
-  // ---- Org Notification Helper ----
-  // Pushes a notification into the org's notification bucket.
-  // The org account is identified by matching organizationName.
-  const notifyOrg = (orgName, notification) => {
-    if (!orgName) return;
-    // Find the org user record to get their _id
-    const users = getStoredUsers();
-    const orgUser = users.find(u => u.role === 'organization' && u.organizationName === orgName);
-    const orgKey = orgUser ? `trackify_notifs_${orgUser._id}` : `trackify_notifs_org_${orgName}`;
-    const existing = JSON.parse(localStorage.getItem(orgKey) || '[]');
-    existing.unshift({
-      id: Date.now().toString(),
-      ...notification,
-      time: new Date().toLocaleString(),
-      read: false,
-    });
-    localStorage.setItem(orgKey, JSON.stringify(existing));
   };
 
   const createComplaint = async (complaintData, files = []) => {
-    let result;
     try {
-      // Call real backend service
-      const res = await complaintService.createComplaint(complaintData, files);
-      // Sync with localStorage for legacy components that might still read it
-      const all = getStoredComplaints();
-      all.push(res);
-      updateStoredComplaints(all);
-      result = res;
-    } catch (e) {
-      // Fallback
-      const all = getStoredComplaints();
-      const newComplaint = {
-        id: "CMP-" + Math.floor(1000 + Math.random() * 9000),
-        ...complaintData,
-        status: "Open",
-        createdAt: new Date().toISOString()
-      };
-      all.push(newComplaint);
-      updateStoredComplaints(all);
-      result = newComplaint;
+      return await complaintService.createComplaint(complaintData, files);
+    } catch (err) {
+      throw new Error(err.response?.data?.error || "Failed to create complaint");
     }
-
-    // Notify the organization about the new complaint
-    if (complaintData.organization || complaintData.organizationName) {
-      const orgName = complaintData.organization || complaintData.organizationName;
-      notifyOrg(orgName, {
-        type: 'new_complaint',
-        title: `New Complaint: ${complaintData.title}`,
-        message: `A member submitted a ${complaintData.priority || 'Medium'} priority ${complaintData.category || ''} complaint.`,
-        category: complaintData.category,
-        priority: complaintData.priority,
-        complaintId: result.id || result._id,
-      });
-    }
-
-    return result;
   };
 
-  // Update task progress & notify org
-  const updateTaskProgress = async (complaintId, { progress, status, workNote }) => {
-    await new Promise(r => setTimeout(r, 300));
-    const all = getStoredComplaints();
-    const idx = all.findIndex(c => (c._id || c.id) === complaintId);
-    if (idx === -1) throw new Error('Task not found');
-
-    const workerName = user?.name || 'Worker';
-    const orgName = all[idx].organization || all[idx].organizationName;
-
-    // Append the new note to existing work log
-    const prevLog = all[idx].workLog || [];
-    if (workNote?.trim()) {
-      prevLog.push({
-        note: workNote.trim(),
-        progress,
-        status,
-        by: workerName,
-        at: new Date().toISOString(),
-      });
+  const updateTaskProgress = async (id, data) => {
+    try {
+      return await complaintService.updateComplaintStatus(id, data);
+    } catch (err) {
+      throw new Error(err.response?.data?.error || "Failed to update task");
     }
-
-    all[idx] = {
-      ...all[idx],
-      progress: progress ?? all[idx].progress ?? 0,
-      status: status || all[idx].status,
-      workLog: prevLog,
-      lastUpdated: new Date().toISOString(),
-    };
-    localStorage.setItem('trackify_db_complaints', JSON.stringify(all));
-
-    // Notify the org
-    notifyOrg(orgName, {
-      type: 'worker_update',
-      title: `Progress Update: ${all[idx].title}`,
-      message: `${workerName} updated task to ${progress}% — "${workNote?.slice(0, 80) || 'No note'}". Status: ${status}.`,
-      category: all[idx].category,
-      priority: all[idx].priority,
-      complaintId,
-      workerName,
-      progress,
-    });
-
-    return all[idx];
   };
 
   const addUserToOrg = async (userData) => {
-    // Check if user has org OR if orgName is provided in userData (for Super Admin adding to specific org)
-    let targetOrg = userData.organizationName || user?.organizationName;
-
-    // Fallback: Check strictly against DB if state is stale
-    if (!targetOrg && user?.email) {
-      const freshUsers = getStoredUsers();
-      const freshUser = freshUsers.find(u => u.email === user.email);
-      if (freshUser && freshUser.organizationName) {
-        targetOrg = freshUser.organizationName;
-        // Self-heal session
-        const updatedSession = { ...user, organizationName: targetOrg };
-        localStorage.setItem("trackify_user", JSON.stringify(updatedSession));
-        setUser(updatedSession);
-      }
+    const organizationName = userData.organizationName || user?.organizationName;
+    if (!organizationName) throw new Error('Organization context missing');
+    try {
+      const res = await organizationService.addUserToOrg(userData.email, organizationName);
+      return res.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.error || "Failed to add user to organization");
     }
-
-    if (!targetOrg) throw new Error("Organization context missing");
-
-    // Reuse logic
-    const users = getStoredUsers();
-
-    // Check if user exists
-    const existingUserIndex = users.findIndex(u => u.email === userData.email);
-
-    if (existingUserIndex !== -1) {
-      // User exists - Link them to the organization
-      users[existingUserIndex].organizationName = targetOrg;
-      users[existingUserIndex].orgName = targetOrg; // Consistency
-
-      // If the user's role was just 'user', we might want to keep it or update it?
-      // Assuming we keep their existing role unless specifically changing it, 
-      // but usually adding to an org implies they are a member.
-
-      updateStoredUsers(users);
-      return users[existingUserIndex];
-    }
-
-    // Create new user if not exists
-    const newUser = {
-      _id: Date.now().toString(),
-      ...userData,
-      orgName: targetOrg, // Ensure consistency
-      organizationName: targetOrg,
-      password: "password123",
-      role: userData.role || "user",
-      createdAt: new Date().toISOString()
-    };
-    users.push(newUser);
-    updateStoredUsers(users);
-    return newUser;
   };
 
-  // ---- Worker Assignment Functions ----
+  const getWorkerAssignments = useCallback(async (workerId) => {
+    try {
+      return await complaintService.getAllComplaints({ assignedWorkerId: workerId });
+    } catch (e) {
+      console.error("fetchWorkerAssignments failed", e);
+      return [];
+    }
+  }, []);
 
-  // Get all assignments for a specific worker
-  const getWorkerAssignments = (workerId) => {
-    const stored = localStorage.getItem('trackify_db_complaints');
-    const all = stored ? JSON.parse(stored) : [];
-    return all.filter(c => c.assignedWorkerId === workerId);
-  };
-
-  // Assign a complaint/task to a worker (used by org admin)
   const assignTaskToWorker = async (complaintId, workerId, workerName) => {
-    await new Promise(r => setTimeout(r, 300));
-    // Update the complaint record
-    const stored = localStorage.getItem('trackify_db_complaints');
-    const all = stored ? JSON.parse(stored) : [];
-    const idx = all.findIndex(c => (c._id || c.id) === complaintId);
-    if (idx === -1) throw new Error('Complaint not found');
-
-    all[idx].assignedWorkerId = workerId;
-    all[idx].assignedWorkerName = workerName;
-    all[idx].assignedDate = new Date().toISOString();
-    all[idx].status = all[idx].status === 'Open' ? 'In Progress' : all[idx].status;
-    localStorage.setItem('trackify_db_complaints', JSON.stringify(all));
-
-    // Push notification to worker
-    const notifKey = `trackify_notifs_${workerId}`;
-    const existing = JSON.parse(localStorage.getItem(notifKey) || '[]');
-    existing.unshift({
-      title: `New Task Assigned: ${all[idx].title}`,
-      message: `You have been assigned a ${all[idx].priority || 'Medium'} priority task in the ${all[idx].category || 'General'} category.`,
-      time: new Date().toLocaleString(),
-      complaintId,
-    });
-    localStorage.setItem(notifKey, JSON.stringify(existing));
-
-    return all[idx];
+    try {
+      return await complaintService.updateComplaintStatus(complaintId, {
+        assignedWorkerId: workerId,
+        assignedWorkerName: workerName,
+        assignedDate: new Date().toISOString(),
+        status: 'In Progress'
+      });
+    } catch (err) {
+      throw new Error(err.response?.data?.error || "Failed to assign task");
+    }
   };
 
-  // Update worker profile (including workerCategories)
   const updateWorkerProfile = async (updates) => {
-    await new Promise(r => setTimeout(r, 400));
-    if (!user) throw new Error('No user logged in');
-
-    const users = getStoredUsers();
-    const idx = users.findIndex(u => u._id === user._id || u.email === user.email);
-    if (idx === -1) throw new Error('User record not found');
-
-    const updatedUser = { ...users[idx], ...updates };
-    users[idx] = updatedUser;
-    updateStoredUsers(users);
-
-    const sessionUser = { ...updatedUser, password: undefined };
-    localStorage.setItem('trackify_user', JSON.stringify(sessionUser));
-    setUser(sessionUser);
-    return sessionUser;
+    try {
+      const res = await authService.updateUserProfile(updates);
+      const userData = res.data;
+      localStorage.setItem("trackify_user", JSON.stringify(userData));
+      setUser(userData);
+      return userData;
+    } catch (err) {
+      throw new Error(err.response?.data?.error || "Failed to update profile");
+    }
   };
 
   const deleteUserFromOrg = async (userId) => {
-    await new Promise(r => setTimeout(r, 500));
-    const users = getStoredUsers();
-
-    // Find if user exists and belongs to this organization (basic check)
-    const idx = users.findIndex(u => u._id === userId || u.id === userId); // Handle both types of IDs
-    if (idx === -1) throw new Error("User not found");
-
-    // Optional: Check if admin is trying to delete themselves usually blocked in UI but good here too
-    if (users[idx].email === user?.email) throw new Error("Cannot delete your own account");
-
-    return true;
+    try {
+      await organizationService.removeUserFromOrg(userId);
+      return true;
+    } catch (err) {
+      throw new Error(err.response?.data?.error || "Failed to remove user");
+    }
   };
 
   const deleteUserAny = async (userId) => {
-    // Admin function to delete any user/org
-    await new Promise(r => setTimeout(r, 500));
-    const users = getStoredUsers();
-    const idx = users.findIndex(u => u._id === userId || u.id === userId);
-    if (idx === -1) throw new Error("User/Org not found");
-
-    users.splice(idx, 1);
-    updateStoredUsers(users);
-    return true;
+    try {
+      await authService.deleteUser(userId);
+      return true;
+    } catch (err) {
+      throw new Error(err.response?.data?.error || "Delete failed");
+    }
   };
 
   const updateUserRole = async (userId, newRole) => {
-    await new Promise(r => setTimeout(r, 500));
-    const users = getStoredUsers();
-    const idx = users.findIndex(u => u._id === userId || u.id === userId);
-    if (idx === -1) throw new Error("User not found");
-
-    users[idx].role = newRole;
-    updateStoredUsers(users);
-    return users[idx];
+    try {
+      // Backend handles collective searching in allUsers
+      const res = await authService.updateUserRole(userId, newRole);
+      return res.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.error || "Failed to update role");
+    }
   };
 
-  const findUserByEmail = (email) => {
-    const users = getStoredUsers();
-    return users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  const findUserByEmail = async (email) => {
+    try {
+      const res = await organizationService.searchUserByEmail(email);
+      return res.success ? res.data : null;
+    } catch (e) {
+      return null;
+    }
   };
 
   const getOrgUsers = async () => {
-    // Fetch all users and filter (Simplest migration step without new BE endpoint)
-    // Ideally BE should have /api/org/users endpoint
     try {
-      const allUsers = await getMockUsers();
-      if (!user || (!user.organizationName && user.role !== 'admin')) return [];
-
-      // Filter: match Organization Name
-      return allUsers.filter(u => u.organizationName === user.organizationName);
+      const organizationName = user?.organizationName;
+      if (!organizationName) return [];
+      const res = await organizationService.getOrgUsers(organizationName);
+      return res.success ? res.data : [];
     } catch (e) {
-      console.error("Get Org Users failed", e);
       return [];
     }
   };
 
+  const getOrgStats = async () => {
+    try {
+      const organizationName = user?.organizationName;
+      if (!organizationName) return null;
+      const res = await organizationService.getOrgStats(organizationName);
+      return res.success ? res.data : null;
+    } catch (e) {
+      return null;
+    }
+  };
+
   const updateUserProfile = async (updates) => {
-    // updates: { name, email, profilePicture, ... }
-    await new Promise(r => setTimeout(r, 500));
-
-    if (!user) throw new Error("No user logged in");
-
-    const users = getStoredUsers();
-    const idx = users.findIndex(u => u._id === user._id || u.email === user.email);
-
-    if (idx === -1) throw new Error("User record not found");
-
-    // Update fields
-    const updatedUser = { ...users[idx], ...updates };
-
-    // Save to DB
-    users[idx] = updatedUser;
-    updateStoredUsers(users);
-
-    // Update Session
-    const sessionUser = { ...updatedUser, password: undefined };
-    localStorage.setItem("trackify_user", JSON.stringify(sessionUser));
-    setUser(sessionUser);
-
-    return sessionUser;
+    try {
+      const res = await authService.updateUserProfile(updates);
+      const userData = res.data;
+      localStorage.setItem("trackify_user", JSON.stringify(userData));
+      setUser(userData);
+      return userData;
+    } catch (err) {
+      throw new Error(err.response?.data?.error || "Failed to update profile");
+    }
   };
 
   const logout = () => {
-    localStorage.removeItem("trackify_user");
-    localStorage.removeItem("trackify_token");
+    authService.logout();
     setUser(null);
     setIsAuthenticated(false);
   };
@@ -686,6 +352,7 @@ const AuthProvider = ({ children }) => {
         addUserToOrg,
         deleteUserFromOrg,
         getOrgUsers,
+        getOrgStats,
         getMockUsers,
         deleteUserAny,
         updateUserRole,
@@ -694,7 +361,6 @@ const AuthProvider = ({ children }) => {
         assignTaskToWorker,
         updateWorkerProfile,
         updateTaskProgress,
-        notifyOrg,
         findUserByEmail,
         categories,
         roles,

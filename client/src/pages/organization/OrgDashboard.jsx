@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import DashboardLayout from "../../components/layout/DashboardLayout";
-import { Users, Shield, User, FileText, AlertCircle, CheckCircle, TrendingUp, Activity, Plus } from "lucide-react";
+import { Users, FileText, CheckCircle, TrendingUp, Activity, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -23,7 +24,7 @@ const itemVariants = {
   }
 };
 
-const GlowingStatCard = ({ icon: Icon, label, value, color, delay }) => (
+const GlowingStatCard = ({ icon: Icon, label, value, color }) => (
   <motion.div
     variants={itemVariants}
     whileHover={{ y: -5, scale: 1.02 }}
@@ -37,12 +38,7 @@ const GlowingStatCard = ({ icon: Icon, label, value, color, delay }) => (
       <div className="flex justify-between items-start mb-4">
         <div className={`p-2 rounded-xl bg-gradient-to-br ${color} bg-opacity-10 text-white shadow-inner`}>
           <Icon size={24} className="mix-blend-overlay" />
-          <div className="absolute inset-0 bg-transparent" />
         </div>
-        <span className="flex items-center text-xs font-semibold text-green-500 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded-full border border-green-100 dark:border-green-800">
-          <TrendingUp size={12} className="mr-1" />
-          +12%
-        </span>
       </div>
 
       <div>
@@ -55,21 +51,30 @@ const GlowingStatCard = ({ icon: Icon, label, value, color, delay }) => (
 
 
 const OrgDashboard = () => {
-  // Mock data
-  const stats = {
-    totalUsers: 25,
-    admins: 3,
-    users: 22,
-    totalComplaints: 68,
-    open: 18,
-    resolved: 40,
-  };
+  const { getOrgStats } = useContext(AuthContext);
+  const [stats, setStats] = useState({
+    totalMembers: 0,
+    totalComplaints: 0,
+    openComplaints: 0,
+    resolvedComplaints: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoading(true);
+      const data = await getOrgStats();
+      if (data) {
+        setStats(data);
+      }
+      setLoading(false);
+    };
+    fetchStats();
+  }, [getOrgStats]);
 
   return (
     <DashboardLayout role="organization">
       <div className="relative min-h-[calc(100vh-100px)]">
-
-
         <motion.div
           initial="hidden"
           animate="visible"
@@ -85,48 +90,37 @@ const OrgDashboard = () => {
                 Welcome back! Here's what's happening in your organization.
               </p>
             </div>
-            <div className="flex gap-3 items-center">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl shadow-lg shadow-blue-500/30 font-medium flex items-center gap-2"
-              >
-                <Plus size={18} />
-                New User
-              </motion.button>
-            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <GlowingStatCard
               icon={Users}
               label="Total Members"
-              value={stats.totalUsers}
+              value={loading ? "..." : stats.totalMembers}
               color="from-indigo-500 to-blue-500"
             />
             <GlowingStatCard
               icon={FileText}
               label="Active Complaints"
-              value={stats.open}
+              value={loading ? "..." : stats.openComplaints}
               color="from-orange-500 to-red-500"
             />
             <GlowingStatCard
               icon={CheckCircle}
               label="Resolved Cases"
-              value={stats.resolved}
+              value={loading ? "..." : stats.resolvedComplaints}
               color="from-emerald-500 to-teal-500"
             />
             <GlowingStatCard
               icon={Activity}
               label="Total Requests"
-              value={stats.totalComplaints}
+              value={loading ? "..." : stats.totalComplaints}
               color="from-purple-500 to-indigo-500"
             />
           </div>
 
           {/* Content Section */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Quick Navigation */}
             <div className="lg:col-span-1 space-y-6">
               <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
                 <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Quick Links</h2>
@@ -147,7 +141,6 @@ const OrgDashboard = () => {
               </div>
             </div>
 
-            {/* Recent Activity Mini */}
             <div className="lg:col-span-2">
               <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-xl p-6 rounded-2xl border border-white/20 dark:border-slate-700/50 shadow-sm">
                 <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">

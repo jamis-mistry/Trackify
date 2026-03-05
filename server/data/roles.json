@@ -1,0 +1,22 @@
+[
+  {
+    "id": "role-1",
+    "name": "user",
+    "description": "Regular User"
+  },
+  {
+    "id": "role-2",
+    "name": "worker",
+    "description": "Service Provider"
+  },
+  {
+    "id": "role-3",
+    "name": "organization",
+    "description": "Org Manager"
+  },
+  {
+    "id": "role-4",
+    "name": "admin",
+    "description": "System Admin"
+  }
+]

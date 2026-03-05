@@ -4,7 +4,7 @@ import { AuthContext } from "../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     ClipboardList, Building2, Clock, CheckCircle, AlertCircle,
-    Search, Filter, Tag, Calendar, ChevronDown, ChevronUp,
+    Search, Filter, Tag, Calendar, ChevronDown,
     Send, ListChecks, Pencil, X, BarChart2
 } from "lucide-react";
 
@@ -175,7 +175,7 @@ const WorkLog = ({ log }) => {
 const WorkerAssignments = () => {
     const { user, getWorkerAssignments, updateTaskProgress, categories } = useContext(AuthContext);
 
-    const workerCategories = categories
+    const workerCategories = (categories || [])
         .filter(c => c.type === 'worker')
         .map(c => c.name);
 
@@ -191,25 +191,32 @@ const WorkerAssignments = () => {
 
     const isInOrg = !!(user?.organizationName);
 
-    const loadAssignments = () => {
-        if (isInOrg && getWorkerAssignments) {
-            const data = getWorkerAssignments(user?._id || user?.id);
-            setAssignments(Array.isArray(data) ? data : []);
+    const loadAssignments = async () => {
+        if (isInOrg && getWorkerAssignments && user) {
+            setLoading(true);
+            try {
+                const data = await getWorkerAssignments(user?._id || user?.id);
+                setAssignments(Array.isArray(data) ? data : []);
+            } catch (e) {
+                console.error("Failed to load assignments", e);
+            } finally {
+                setLoading(false);
+            }
+        } else {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
-    useEffect(() => { loadAssignments(); }, [user]);
+    useEffect(() => { loadAssignments(); }, [user, isInOrg, getWorkerAssignments]);
 
     const handleProgressSave = async (complaintId, updates) => {
-        await updateTaskProgress(complaintId, updates);
-        // Reload from localStorage
+        await updateTaskProgress(complaintId, { ...updates, workerName: user.name });
         loadAssignments();
     };
 
-    const filtered = assignments.filter(a => {
-        const matchSearch = a.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            a.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const filtered = (assignments || []).filter(a => {
+        const matchSearch = (a.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (a.description || "").toLowerCase().includes(searchTerm.toLowerCase());
         const matchCat = filterCategory === "All" || a.category === filterCategory;
         const matchStatus = filterStatus === "All" || a.status === filterStatus;
         return matchSearch && matchCat && matchStatus;
@@ -230,7 +237,6 @@ const WorkerAssignments = () => {
                     </p>
                 </div>
 
-                {/* Not in org */}
                 {!isInOrg ? (
                     <motion.div
                         initial={{ opacity: 0, y: 12 }}
@@ -279,9 +285,11 @@ const WorkerAssignments = () => {
                             </div>
                         </div>
 
-                        {/* Task List */}
                         {loading ? (
-                            <div className="text-center py-16 text-gray-400">Loading...</div>
+                            <div className="text-center py-16 text-gray-400">
+                                <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                                Loading Assignments...
+                            </div>
                         ) : filtered.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-20 bg-white/50 dark:bg-gray-800/50 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
                                 <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-full mb-4">
@@ -310,7 +318,6 @@ const WorkerAssignments = () => {
                                             className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-900 transition-all overflow-hidden"
                                         >
                                             <div className="p-5">
-                                                {/* Header row */}
                                                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -340,7 +347,6 @@ const WorkerAssignments = () => {
                                                     </div>
                                                 </div>
 
-                                                {/* Progress Bar */}
                                                 <div className="mt-4">
                                                     <div className="flex justify-between items-center mb-1 text-xs">
                                                         <span className="font-semibold text-slate-600 dark:text-slate-300">Progress</span>
@@ -359,10 +365,8 @@ const WorkerAssignments = () => {
                                                     </div>
                                                 </div>
 
-                                                {/* Footer actions */}
                                                 <div className="mt-4 flex items-center justify-end flex-wrap gap-3">
                                                     <div className="flex gap-2 ml-auto">
-                                                        {/* Toggle work log */}
                                                         <button
                                                             onClick={() => setShowLogId(isLogOpen ? null : taskId)}
                                                             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors"
@@ -375,7 +379,6 @@ const WorkerAssignments = () => {
                                                                 </span>
                                                             )}
                                                         </button>
-                                                        {/* Toggle update panel */}
                                                         <button
                                                             onClick={() => setExpandedId(isExpanded ? null : taskId)}
                                                             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-colors"
@@ -385,7 +388,6 @@ const WorkerAssignments = () => {
                                                     </div>
                                                 </div>
 
-                                                {/* Work Log */}
                                                 <AnimatePresence>
                                                     {isLogOpen && (
                                                         <motion.div
@@ -405,7 +407,6 @@ const WorkerAssignments = () => {
                                                     )}
                                                 </AnimatePresence>
 
-                                                {/* Update Progress Panel */}
                                                 <AnimatePresence>
                                                     {isExpanded && (
                                                         <ProgressPanel

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/categories';
+const API_URL = 'http://localhost:5002/api/categories';
 
 const getCategories = async (type) => {
     const response = await axios.get(API_URL, { params: { type } });
@@ -12,8 +12,8 @@ const createCategory = async (categoryData) => {
     return response.data;
 };
 
-const deleteCategory = async (id) => {
-    const response = await axios.delete(`${API_URL}/${id}`);
+const deleteCategory = async (id, type) => {
+    const response = await axios.delete(`${API_URL}/${id}`, { params: { type } });
     return response.data;
 };
 

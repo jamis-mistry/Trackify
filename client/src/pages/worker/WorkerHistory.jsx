@@ -29,7 +29,7 @@ const getStatusConfig = (status) => {
 const WorkerHistory = () => {
     const { user, getWorkerAssignments, categories } = useContext(AuthContext);
 
-    const workerCategories = categories
+    const workerCategories = (categories || [])
         .filter(c => c.type === 'worker')
         .map(c => c.name);
 
@@ -44,18 +44,28 @@ const WorkerHistory = () => {
 
     const isInOrg = !!(user?.organizationName);
 
-    useEffect(() => {
-        if (isInOrg && getWorkerAssignments) {
-            const data = getWorkerAssignments(user?._id || user?.id);
-            setHistory(Array.isArray(data) ? data : []);
+    const loadHistory = async () => {
+        if (isInOrg && getWorkerAssignments && user) {
+            setLoading(true);
+            try {
+                const data = await getWorkerAssignments(user?._id || user?.id);
+                setHistory(Array.isArray(data) ? data : []);
+            } catch (e) {
+                console.error("Failed to load history", e);
+            } finally {
+                setLoading(false);
+            }
+        } else {
+            setLoading(false);
         }
-        setLoading(false);
-    }, [user]);
+    };
 
-    const filtered = history.filter(item => {
+    useEffect(() => { loadHistory(); }, [user, isInOrg, getWorkerAssignments]);
+
+    const filtered = (history || []).filter(item => {
         const matchSearch =
-            item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+            (item.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (item.description || "").toLowerCase().includes(searchTerm.toLowerCase());
         const matchCat = filterCat === "All" || item.category === filterCat;
         const matchStatus = filterStatus === "All" || item.status === filterStatus;
         return matchSearch && matchCat && matchStatus;
@@ -160,7 +170,10 @@ const WorkerHistory = () => {
 
                             {/* Timeline */}
                             {loading ? (
-                                <div className="text-center py-12 text-slate-400">Loading history...</div>
+                                <div className="text-center py-12 text-slate-400">
+                                    <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                                    Loading history...
+                                </div>
                             ) : filtered.length === 0 ? (
                                 <div className="text-center py-16 bg-white/50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
                                     <History className="mx-auto text-slate-300 dark:text-slate-600 mb-3" size={48} />

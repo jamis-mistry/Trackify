@@ -16,8 +16,11 @@ if (!fs.existsSync(path.join(__dirname, '..', 'uploads'))) {
 // Body parser
 app.use(express.json());
 
-// Enable CORS
-app.use(cors());
+// Enable CORS - allow Vite dev server
+app.use(cors({
+    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+    credentials: true
+}));
 
 // Static folder for uploads
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
@@ -27,5 +30,6 @@ app.use('/api/auth', auth);
 app.use('/api/complaints', require('./routes/complaint.routes'));
 app.use('/api/categories', require('./routes/category.routes'));
 app.use('/api/roles', require('./routes/role.routes'));
+app.use('/api/organization', require('./routes/organization.routes'));
 
 module.exports = app;

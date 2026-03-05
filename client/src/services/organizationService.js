@@ -1,45 +1,47 @@
-// Later replace with backend base URL
-const API_URL = "http://localhost:5000/api/organization";
+import axios from 'axios';
 
-// Helper to attach token
-const _getAuthHeader = () => {
-  const user = JSON.parse(localStorage.getItem("trackify_user") || "{}");
-  return {
-    headers: {
-      Authorization: `Bearer ${user?.token}`,
-    },
-  };
+const API_URL = 'http://localhost:5002/api/organization';
+
+// Get all members of an organization
+const getOrgUsers = async (organizationName) => {
+  const response = await axios.get(`${API_URL}/users`, {
+    params: { organizationName }
+  });
+  return response.data;
 };
 
-// Get organization users
-const getUsers = async () => {
-  // REAL VERSION
-  // return axios.get(`${API_URL}/users`, getAuthHeader());
-
-  // MOCK
-  return [];
+// Search for any user by email
+const searchUserByEmail = async (email) => {
+  const response = await axios.get(`${API_URL}/search`, {
+    params: { email }
+  });
+  return response.data;
 };
 
-// Create user (Organization)
-const createUser = async () => {
-  // REAL VERSION
-  // return axios.post(`${API_URL}/users`, data, getAuthHeader());
-
-  // MOCK
-  return true;
+// Add (link) a user to an organization
+const addUserToOrg = async (email, organizationName) => {
+  const response = await axios.post(`${API_URL}/users`, { email, organizationName });
+  return response.data;
 };
 
-// Update user status or role
-const updateUser = async () => {
-  // REAL VERSION
-  // return axios.put(`${API_URL}/users/${id}`, data, getAuthHeader());
+// Remove (unlink) a user from an organization
+const removeUserFromOrg = async (userId) => {
+  const response = await axios.delete(`${API_URL}/users/${userId}`);
+  return response.data;
+};
 
-  // MOCK
-  return true;
+// Get org statistics
+const getOrgStats = async (organizationName) => {
+  const response = await axios.get(`${API_URL}/stats`, {
+    params: { organizationName }
+  });
+  return response.data;
 };
 
 export default {
-  getUsers,
-  createUser,
-  updateUser,
+  getOrgUsers,
+  searchUserByEmail,
+  addUserToOrg,
+  removeUserFromOrg,
+  getOrgStats
 };

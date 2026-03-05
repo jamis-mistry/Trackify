@@ -59,7 +59,7 @@ const AdminOrganizations = () => {
     const confirmDelete = async () => {
         if (!orgToDelete) return;
         try {
-            await deleteUserAny(org._id || org.id);
+            await deleteUserAny(orgToDelete._id || orgToDelete.id);
             setOrgsList(orgsList.filter(o => o.id !== orgToDelete.id && o._id !== orgToDelete._id));
             toast.success("Organization deleted successfully");
             setDeleteModalOpen(false);

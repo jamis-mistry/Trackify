@@ -60,12 +60,12 @@ const ManageUsers = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSearchUser = (e) => {
+  const handleSearchUser = async (e) => {
     e.preventDefault();
     setError("");
     if (!searchEmail) return;
 
-    const result = findUserByEmail(searchEmail);
+    const result = await findUserByEmail(searchEmail);
     setFoundUser(result || null);
     setHasSearched(true);
 

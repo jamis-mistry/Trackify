@@ -1,5 +1,7 @@
 const Complaint = require('../models/Complaint.model');
 const User = require('../models/User.model');
+const Organization = require('../models/Organization.model');
+const Worker = require('../models/Worker.model');
 
 // @desc    Get all complaints
 // @route   GET /api/complaints
@@ -12,6 +14,12 @@ exports.getComplaints = async (req, res, next) => {
         // For migration simplicity, we support query params:
         if (req.query.userId) {
             query.userId = req.query.userId;
+        }
+        if (req.query.organizationName) {
+            query.organizationName = req.query.organizationName;
+        }
+        if (req.query.assignedWorkerId) {
+            query.assignedWorkerId = req.query.assignedWorkerId;
         }
 
         const complaints = await Complaint.find(query);
@@ -51,7 +59,10 @@ exports.createComplaint = async (req, res, next) => {
         // Enrich with user name if possible
         let userName = 'Anonymous';
         if (req.body.userId) {
-            const user = await User.findOne({ _id: req.body.userId }); // We might need to adjust User.json.js to support findById or use findOne({_id: ...})
+            let user = await User.findOne({ _id: req.body.userId });
+            if (!user) user = await Organization.findOne({ _id: req.body.userId });
+            if (!user) user = await Worker.findOne({ _id: req.body.userId });
+
             if (user) userName = user.name;
         }
 
@@ -91,7 +102,28 @@ exports.updateComplaint = async (req, res, next) => {
             return res.status(404).json({ success: false, error: 'Complaint not found' });
         }
 
-        complaint = await Complaint.findByIdAndUpdate(req.params.id, req.body);
+        if (req.body.workNote) {
+            const entry = {
+                note: req.body.workNote,
+                progress: req.body.progress || complaint.progress,
+                status: req.body.status || complaint.status,
+                by: req.body.workerName || 'Worker',
+                at: new Date()
+            };
+            complaint = await Complaint.findByIdAndUpdate(
+                req.params.id,
+                {
+                    $set: req.body,
+                    $push: { workLog: entry }
+                },
+                { new: true, runValidators: true }
+            );
+        } else {
+            complaint = await Complaint.findByIdAndUpdate(req.params.id, req.body, {
+                new: true,
+                runValidators: true
+            });
+        }
 
         res.status(200).json({ success: true, data: complaint });
     } catch (err) {
