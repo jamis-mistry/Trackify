@@ -1,0 +1,52 @@
+[
+  {
+    "id": "cat-worker",
+    "type": "worker",
+    "name": "Technical"
+  },
+  {
+    "id": "cat-worker-2",
+    "type": "worker",
+    "name": "Service"
+  },
+  {
+    "id": "cat-worker-3",
+    "type": "worker",
+    "name": "Billing"
+  },
+  {
+    "id": "cat-worker-4",
+    "type": "worker",
+    "name": "Infrastructure"
+  },
+  {
+    "id": "cat-worker-5",
+    "type": "worker",
+    "name": "Other"
+  },
+  {
+    "id": "cat-issue-1",
+    "type": "issue",
+    "name": "Technical"
+  },
+  {
+    "id": "cat-issue-2",
+    "type": "issue",
+    "name": "Service"
+  },
+  {
+    "id": "cat-issue-3",
+    "type": "issue",
+    "name": "Billing"
+  },
+  {
+    "id": "cat-issue-4",
+    "type": "issue",
+    "name": "Infrastructure"
+  },
+  {
+    "id": "cat-issue-5",
+    "type": "issue",
+    "name": "Other"
+  }
+]

@@ -281,16 +281,19 @@ const AuthProvider = ({ children }) => {
   const fetchCategories = useCallback(async () => {
     try {
       const data = await categoryService.getCategories();
-      setCategories(data);
+      const fetchedCats = data && data.success !== undefined ? data.data : data;
+      setCategories(Array.isArray(fetchedCats) ? fetchedCats : []);
     } catch (error) {
       console.error("Error fetching categories", error);
+      setCategories(getStoredCategories());
     }
   }, []);
 
   const fetchRoles = useCallback(async () => {
     try {
       const data = await roleService.getRoles();
-      setRoles(data);
+      const fetchedRoles = data && data.success !== undefined ? data.data : data;
+      setRoles(Array.isArray(fetchedRoles) ? fetchedRoles : []);
     } catch (error) {
       console.error("Error fetching roles", error);
     }
@@ -303,25 +306,62 @@ const AuthProvider = ({ children }) => {
   }, [fetchCategories, fetchRoles]);
 
   const addCategory = async (catData) => {
-    const newCat = await categoryService.createCategory(catData);
-    setCategories(prev => [...prev, newCat]);
+    let newCat;
+    try {
+      const res = await categoryService.createCategory(catData);
+      newCat = res && res.success !== undefined ? res.data : res;
+    } catch (error) {
+      console.error("Backend addCategory failed, using fallback", error);
+      newCat = {
+        id: "cat-" + Math.floor(1000 + Math.random() * 9000),
+        ...catData
+      };
+    }
+    setCategories(prev => {
+      const updated = [...prev, newCat];
+      localStorage.setItem('trackify_db_categories', JSON.stringify(updated));
+      return updated;
+    });
     return newCat;
   };
 
   const deleteCategory = async (id) => {
-    await categoryService.deleteCategory(id);
-    setCategories(prev => prev.filter(c => c.id !== id));
+    try {
+      await categoryService.deleteCategory(id);
+    } catch (error) {
+      console.error("Backend deleteCategory failed, using fallback", error);
+    }
+    setCategories(prev => {
+      // Use logical OR for fallback just in case some are _id
+      const updated = prev.filter(c => c.id !== id && c._id !== id);
+      localStorage.setItem('trackify_db_categories', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const addRole = async (roleData) => {
-    const newRole = await roleService.addRole(roleData);
+    let newRole;
+    try {
+      const res = await roleService.addRole(roleData);
+      newRole = res && res.success !== undefined ? res.data : res;
+    } catch (error) {
+      console.error("Backend addRole failed, using fallback", error);
+      newRole = {
+        id: "role-" + Math.floor(1000 + Math.random() * 9000),
+        ...roleData
+      };
+    }
     setRoles(prev => [...prev, newRole]);
     return newRole;
   };
 
   const deleteRole = async (id) => {
-    await roleService.deleteRole(id);
-    setRoles(prev => prev.filter(r => r.id !== id));
+    try {
+      await roleService.deleteRole(id);
+    } catch (error) {
+      console.error("Backend deleteRole failed", error);
+    }
+    setRoles(prev => prev.filter(r => r.id !== id && r._id !== id));
   };
 
   // ---- Org Notification Helper ----

@@ -61,10 +61,10 @@ const AdminCategories = () => {
         }
     };
 
-    const filteredCategories = categories.filter(cat =>
-        cat.type === activeTab &&
-        cat.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredCategories = Array.isArray(categories) ? categories.filter(cat =>
+        cat && cat.type === activeTab &&
+        (cat.name || "").toLowerCase().includes(searchTerm.toLowerCase())
+    ) : [];
 
     return (
         <DashboardLayout role="admin">

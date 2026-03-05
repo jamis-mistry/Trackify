@@ -7,7 +7,7 @@ const crypto = require('crypto');
 // @access  Public
 exports.register = async (req, res, next) => {
     try {
-        const { name, email, password, role, orgName } = req.body;
+        const { name, email, password, role, orgName, workerCategories } = req.body;
 
         // Create user
         const user = await User.create({
@@ -15,7 +15,8 @@ exports.register = async (req, res, next) => {
             email,
             password,
             role,
-            organizationName: orgName
+            organizationName: orgName,
+            workerCategories: role === 'worker' ? workerCategories : []
         });
 
         sendTokenResponse(user, 200, res);

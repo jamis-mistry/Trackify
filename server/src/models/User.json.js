@@ -22,6 +22,7 @@ class User {
         this.role = data.role || 'user';
         this.organizationId = data.organizationId;
         this.organizationName = data.organizationName;
+        this.workerCategories = data.workerCategories || [];
         this.resetPasswordToken = data.resetPasswordToken;
         this.resetPasswordExpire = data.resetPasswordExpire ? new Date(data.resetPasswordExpire) : undefined;
         this.createdAt = data.createdAt ? new Date(data.createdAt) : new Date();

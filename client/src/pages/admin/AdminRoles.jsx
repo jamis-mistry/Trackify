@@ -43,10 +43,11 @@ const AdminRoles = () => {
         }
     };
 
-    const filteredRoles = roles.filter(role =>
-        role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        role.description.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredRoles = Array.isArray(roles) ? roles.filter(role =>
+        role &&
+        ((role.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (role.description || "").toLowerCase().includes(searchTerm.toLowerCase()))
+    ) : [];
 
     return (
         <DashboardLayout role="admin">

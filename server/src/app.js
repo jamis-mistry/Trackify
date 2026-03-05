@@ -25,5 +25,7 @@ app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 // Mount routers
 app.use('/api/auth', auth);
 app.use('/api/complaints', require('./routes/complaint.routes'));
+app.use('/api/categories', require('./routes/category.routes'));
+app.use('/api/roles', require('./routes/role.routes'));
 
 module.exports = app;
