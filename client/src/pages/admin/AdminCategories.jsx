@@ -134,7 +134,7 @@ const AdminCategories = () => {
                                     initial={{ opacity: 0, scale: 0.9 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.9 }}
-                                    key={cat.id}
+                                    key={cat._id || cat.id}
                                     className="group relative bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 hover:shadow-xl hover:border-indigo-500/30 transition-all duration-300"
                                 >
                                     <div className="flex items-center justify-between">
@@ -148,7 +148,7 @@ const AdminCategories = () => {
                                             </div>
                                         </div>
                                         <button
-                                            onClick={() => handleDeleteCategory(cat.id)}
+                                            onClick={() => handleDeleteCategory(cat._id || cat.id)}
                                             className="p-3 rounded-xl text-slate-300 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 transition-all opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0"
                                         >
                                             <Trash2 size={20} />
