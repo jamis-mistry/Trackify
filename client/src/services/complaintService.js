@@ -25,22 +25,12 @@ const createComplaint = async (complaintData, files = []) => {
       formData.append('attachments', file);
     });
 
-    const response = await axios.post(API_URL, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+    const response = await axios.post(API_URL, formData);
 
     return response.data.data;
   } catch (error) {
-    console.error("Error creating complaint", error);
-    // Fallback to mock if backend fails for any reason during development
-    return {
-      id: "CMP-MOCK-" + Math.floor(Math.random() * 1000),
-      ...complaintData,
-      status: "Open",
-      createdAt: new Date().toISOString()
-    };
+    console.error("Error creating complaint", error.response?.data || error.message);
+    throw error;
   }
 };
 

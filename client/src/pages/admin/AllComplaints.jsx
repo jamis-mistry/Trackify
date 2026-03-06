@@ -40,9 +40,12 @@ const AllComplaints = () => {
   }, []);
 
   const filteredComplaints = complaints.filter(c => {
+    const orgTarget = (c.organizationName || c.organization || "").toLowerCase();
+    const userTarget = (c.userName || c.user || "").toLowerCase();
+
     const matchesSearch = c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.organization.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.user.toLowerCase().includes(searchTerm.toLowerCase());
+      orgTarget.includes(searchTerm.toLowerCase()) ||
+      userTarget.includes(searchTerm.toLowerCase());
 
     const matchesFilter = filterStatus === "All" || c.status === filterStatus;
 
@@ -109,7 +112,7 @@ const AllComplaints = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredComplaints.length > 0 ? (
               filteredComplaints.map(c => (
-                <ComplaintCard key={c.id} complaint={c} navigate={navigate} />
+                <ComplaintCard key={c._id || c.id} complaint={c} navigate={navigate} />
               ))
             ) : (
               <motion.div
@@ -162,7 +165,7 @@ const ComplaintCard = ({ complaint, navigate }) => {
         <span className={`px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${getPriorityColor(complaint.priority)}`}>
           {complaint.priority} Priority
         </span>
-        <span className="text-xs font-mono text-slate-400">#{complaint.id}</span>
+        <span className="text-xs font-mono text-slate-400">#{complaint._id || complaint.id}</span>
       </div>
 
       <div className="mb-4 relative z-10">
@@ -172,7 +175,7 @@ const ComplaintCard = ({ complaint, navigate }) => {
         {/* Replaced description placeholder with actual data if available, or just organization/user info */}
         <div className="flex items-center gap-2 mt-2 text-sm text-slate-500 dark:text-slate-400">
           <Building2 size={14} />
-          <span className="truncate">{complaint.organization}</span>
+          <span className="truncate">{complaint.organizationName || complaint.organization}</span>
         </div>
       </div>
 
@@ -180,9 +183,11 @@ const ComplaintCard = ({ complaint, navigate }) => {
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
             <User size={14} className="text-slate-400" />
-            {complaint.user}
+            {complaint.userName || complaint.user}
           </div>
-          <span className="text-xs text-slate-400">{complaint.createdAt}</span>
+          <span className="text-xs text-slate-400">
+            {new Date(complaint.createdAt).toLocaleDateString()}
+          </span>
         </div>
 
         <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${statusConfig.color} w-full justify-center`}>
@@ -192,7 +197,7 @@ const ComplaintCard = ({ complaint, navigate }) => {
       </div>
 
       <button
-        onClick={() => navigate(`/admin/complaints/${complaint.id}`)}
+        onClick={() => navigate(`/admin/complaints/${complaint._id || complaint.id}`)}
         className="w-full mt-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 font-medium hover:bg-purple-600 hover:text-white dark:hover:bg-purple-500 transition-all duration-300 flex items-center justify-center gap-2 text-sm group-hover:shadow-md"
       >
         View Details

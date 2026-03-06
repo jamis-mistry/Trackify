@@ -57,6 +57,11 @@ exports.createComplaint = async (req, res, next) => {
         // req.body contains { title, description, category, priority, userId, ... }
 
         // Enrich with user name if possible
+        // Sanitize userId if it comes in stringified from browser FormData
+        if (req.body.userId === "undefined" || req.body.userId === "null") {
+            delete req.body.userId;
+        }
+
         let userName = 'Anonymous';
         if (req.body.userId) {
             let user = await User.findOne({ _id: req.body.userId });
@@ -87,7 +92,7 @@ exports.createComplaint = async (req, res, next) => {
         res.status(201).json({ success: true, data: complaint });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ success: false, error: 'Server Error' });
+        res.status(500).json({ success: false, error: err.message || 'Server Error' });
     }
 };
 

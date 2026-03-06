@@ -9,7 +9,7 @@ const ComplaintsList = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [filterStatus, setFilterStatus] = useState("All");
 
-    const [viewMode, setViewMode] = useState("organization"); // "my" or "organization"
+    const [viewMode, setViewMode] = useState("my"); // "my" or "organization"
 
     useEffect(() => {
         const fetchComplaints = async () => {
@@ -21,7 +21,8 @@ const ComplaintsList = () => {
                 filters.organizationName = user.organizationName;
             }
             const data = await getMockComplaints(filters);
-            setComplaints(data);
+            console.log("Fetched Complaints for filters:", filters, data); // For debugging
+            setComplaints(Array.isArray(data) ? data : []);
             setLoading(false);
         };
         fetchComplaints();
@@ -29,8 +30,11 @@ const ComplaintsList = () => {
 
     // Filter Logic
     const filteredComplaints = complaints.filter(complaint => {
-        const matchesSearch = (complaint.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (complaint._id || "").toLowerCase().includes(searchTerm.toLowerCase());
+        const idTarget = (complaint._id || complaint.id || "").toLowerCase();
+        const titleTarget = (complaint.title || complaint.subject || "").toLowerCase();
+
+        const matchesSearch = titleTarget.includes(searchTerm.toLowerCase()) ||
+            idTarget.includes(searchTerm.toLowerCase());
         const matchesStatus = filterStatus === "All" || complaint.status === filterStatus;
         return matchesSearch && matchesStatus;
     });

@@ -53,7 +53,7 @@ const ComplaintSchema = new mongoose.Schema({
     },
     attachments: [{
         url: String,
-        type: String, // 'image' or 'video'
+        type: { type: String }, // 'image' or 'video'
         name: String
     }],
     workLog: [{

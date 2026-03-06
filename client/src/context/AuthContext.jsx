@@ -20,7 +20,9 @@ const AuthProvider = ({ children }) => {
     if (data) {
       try {
         const parsed = JSON.parse(data);
-        setUser(parsed);
+        // Handle migration from previous bug where wrapper object was stored
+        const userObj = parsed.success !== undefined && parsed.data ? parsed.data : parsed;
+        setUser(userObj);
         setIsAuthenticated(true);
       } catch (err) {
         console.error("Auth init error", err);
@@ -33,11 +35,12 @@ const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const res = await authService.login(email, password);
-      const userData = res.data;
-      localStorage.setItem("trackify_user", JSON.stringify(userData));
-      setUser(userData);
+      // Backend returns { success: true, data: { _id, name, ... } } -> res is this object since authService strips the axios wrapper
+      const sessionUser = res.success !== undefined ? res.data : res;
+      localStorage.setItem("trackify_user", JSON.stringify(sessionUser));
+      setUser(sessionUser);
       setIsAuthenticated(true);
-      return { success: true, data: userData };
+      return { success: true, data: sessionUser };
     } catch (err) {
       throw new Error(err.response?.data?.error || "Invalid credentials");
     }
@@ -46,7 +49,7 @@ const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const res = await authService.register(userData);
-      const sessionUser = res.data;
+      const sessionUser = res.success !== undefined ? res.data : res;
       localStorage.setItem("trackify_user", JSON.stringify(sessionUser));
       setUser(sessionUser);
       setIsAuthenticated(true);
@@ -77,7 +80,7 @@ const AuthProvider = ({ children }) => {
   const resetPassword = async (email, otp, password) => {
     try {
       const res = await authService.resetPassword(email, otp, password);
-      const sessionUser = res.data;
+      const sessionUser = res.success !== undefined ? res.data : res;
       localStorage.setItem("trackify_user", JSON.stringify(sessionUser));
       setUser(sessionUser);
       setIsAuthenticated(true);

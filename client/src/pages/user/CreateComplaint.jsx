@@ -64,10 +64,15 @@ const CreateComplaint = () => {
       category,
       description,
       priority,
-      userName: user.name,
-      userId: user._id || user.id,
-      organizationName: user.organizationName
+      userName: user.name || "Anonymous",
+      organizationName: user.organizationName || "System"
     };
+
+    // Crucial: Only append userId if it's truly defined to avoid Mongoose Cast Error from literal "undefined" string
+    const id = user._id || user.id;
+    if (id) {
+      complaintData.userId = id;
+    }
 
     try {
       await createComplaint(complaintData, attachments);
@@ -79,7 +84,7 @@ const CreateComplaint = () => {
       setPriority("Low");
       setAttachments([]);
     } catch (err) {
-      setMessage("Failed to submit complaint. Try again.");
+      setMessage(`Failed: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
