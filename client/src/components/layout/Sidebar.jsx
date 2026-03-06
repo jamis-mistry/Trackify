@@ -11,7 +11,8 @@ import {
   Briefcase,
   Menu,
   Tag,
-  Shield
+  Shield,
+  MessageSquareQuote
 } from "lucide-react";
 
 
@@ -39,6 +40,7 @@ const Sidebar = ({ role, isCollapsed, toggleSidebar }) => {
       { name: "Worker Categories", path: "/admin/categories?tab=worker", icon: Briefcase },
       { name: "Issue Categories", path: "/admin/categories?tab=issue", icon: Tag },
       { name: "Manage Roles", path: "/admin/roles", icon: Shield },
+      { name: "Testimonials", path: "/admin/testimonials", icon: MessageSquareQuote },
     ],
     organization: [
       { name: "Dashboard", path: "/organization/dashboard", icon: LayoutDashboard },

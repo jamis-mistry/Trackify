@@ -25,6 +25,7 @@ import AdminOrganizations from "../pages/admin/AdminOrganizations";
 import AdminUsers from "../pages/admin/AdminUsers";
 import AdminCategories from "../pages/admin/AdminCategories";
 import AdminRoles from "../pages/admin/AdminRoles";
+import AdminTestimonials from "../pages/admin/AdminTestimonials";
 
 // Organization pages
 import OrgDashboard from "../pages/organization/OrgDashboard";
@@ -224,6 +225,17 @@ const AppRoutes = () => {
             <ProtectedRoute>
               <RoleRoute role="admin">
                 <AdminRoles />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/testimonials"
+          element={
+            <ProtectedRoute>
+              <RoleRoute role="admin">
+                <AdminTestimonials />
               </RoleRoute>
             </ProtectedRoute>
           }
