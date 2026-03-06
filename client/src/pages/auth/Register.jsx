@@ -79,6 +79,16 @@ const Register = () => {
       return;
     }
 
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+      setError("Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character");
+      return;
+    }
+
     if (role === "worker" && selectedCategories.length === 0) {
       setError("Please select at least one category");
       return;
