@@ -27,7 +27,7 @@ const seedData = async () => {
         for (const role of roles) {
             await Role.findOneAndUpdate({ name: role.name }, role, { upsert: true, new: true });
         }
-        console.log('✅ Default roles created');
+        console.log(' Default roles created');
 
         // 2. Create Super Admin
         const adminEmail = 'admin@gmail.com';
@@ -42,12 +42,12 @@ const seedData = async () => {
                 role: 'admin'
             });
             await admin.save();
-            console.log('✅ Super Admin created: admin@gmail.com / admin@123');
+            console.log(' Super Admin created: admin@gmail.com / admin@123');
         } else {
             admin.role = 'admin'; // Ensure role is correct
             admin.password = adminPassword; // Reset to default for user convenience
             await admin.save();
-            console.log('✅ Super Admin credentials reset to: admin@gmail.com / admin@123');
+            console.log(' Super Admin credentials reset to: admin@gmail.com / admin@123');
         }
 
         // 3. Create Default Categories
@@ -60,12 +60,12 @@ const seedData = async () => {
         for (const name of workerCategories) {
             await WorkerCategory.findOneAndUpdate({ name }, { name }, { upsert: true });
         }
-        console.log('✅ Default categories created in separate collections');
+        console.log(' Default categories created in separate collections');
 
         console.log('\n--- SEEDING COMPLETE ---');
         process.exit(0);
     } catch (err) {
-        console.error('❌ Seeding Error:', err.message);
+        console.error(' Seeding Error:', err.message);
         process.exit(1);
     }
 };

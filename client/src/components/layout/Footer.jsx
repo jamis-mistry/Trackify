@@ -67,7 +67,7 @@ const Footer = () => {
             &copy; {new Date().getFullYear()} Trackify. All rights reserved.
           </p>
           <p className="text-slate-500 text-sm flex gap-6">
-            <span>Made with ❤️ for better governance</span>
+            <span>Made with  for better governance</span>
           </p>
         </div>
       </div>

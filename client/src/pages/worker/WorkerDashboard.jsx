@@ -95,7 +95,7 @@ const WorkerDashboard = () => {
                 <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                     <div>
                         <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">
-                            Hello, {user?.name?.split(" ")[0]}! 👷
+                            Hello, {user?.name?.split(" ")[0]}! 
                         </h1>
                         <p className="text-gray-500 dark:text-gray-400 mt-2">
                             {isInOrg
@@ -148,7 +148,7 @@ const WorkerDashboard = () => {
                                                 : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-indigo-400 hover:text-indigo-600"
                                                 }`}
                                         >
-                                            {selectedCategories.includes(cat) && "✓ "}{cat}
+                                            {selectedCategories.includes(cat) && " "}{cat}
                                         </button>
                                     ))}
                                 </div>

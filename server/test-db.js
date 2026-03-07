@@ -9,10 +9,10 @@ mongoose.connect(uri, {
     connectTimeoutMS: 5000,
 })
 .then(() => {
-    console.log('✅ MongoDB connected successfully');
+    console.log(' MongoDB connected successfully');
     process.exit(0);
 })
 .catch(err => {
-    console.error('❌ MongoDB connection error:', err.message);
+    console.error(' MongoDB connection error:', err.message);
     process.exit(1);
 });

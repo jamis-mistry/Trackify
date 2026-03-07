@@ -12,7 +12,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
           onClick={onClose}
           className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 font-bold"
         >
-          ✕
+          X
         </button>
       </div>
     </div>

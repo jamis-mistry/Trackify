@@ -15,9 +15,11 @@ const connectDB = async () => {
             family: 4 // Use IPv4
         });
 
-        console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+        conn.deleteModel("Organization")
+
+        console.log(` MongoDB Connected: ${conn.connection.host}`);
     } catch (error) {
-        console.error(`❌ MongoDB Connection Error: ${error.message}`);
+        console.error(` MongoDB Connection Error: ${error.message}`);
         // Keep retrying or exit? Development usually exits but let's see.
         process.exit(1);
     }
