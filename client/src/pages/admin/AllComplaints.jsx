@@ -43,7 +43,9 @@ const AllComplaints = () => {
     const orgTarget = (c.organizationName || c.organization || "").toLowerCase();
     const userTarget = (c.userName || c.user || "").toLowerCase();
 
-    const matchesSearch = c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const titleTarget = (c.title || c.subject || "").toLowerCase();
+
+    const matchesSearch = titleTarget.includes(searchTerm.toLowerCase()) ||
       orgTarget.includes(searchTerm.toLowerCase()) ||
       userTarget.includes(searchTerm.toLowerCase());
 
@@ -156,7 +158,9 @@ const ComplaintCard = ({ complaint, navigate }) => {
 
   return (
     <motion.div
-      variants={itemVariants}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
       className="group relative bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden flex flex-col"
     >
       <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-700/50 dark:to-slate-800 rounded-bl-full -mr-4 -mt-4 opacity-50 transition-transform duration-500 group-hover:scale-110" />
